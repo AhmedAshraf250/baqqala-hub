@@ -1,0 +1,11 @@
+/*
+ * Admin area stylesheet — left-to-right.
+ *
+ * Loaded only by the admin shell. The customer area never sees Bootstrap, and
+ * this file never sees Tailwind.
+ */
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+@import 'overlayscrollbars/styles/overlayscrollbars.css';
+@import 'admin-lte/dist/css/adminlte.css';
+
+@import './_theme.css';

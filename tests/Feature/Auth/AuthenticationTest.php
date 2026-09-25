@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use App\Foundation\Identity\Models\User;
 use Laravel\Fortify\Features;
 
 test('login screen can be rendered', function () {
@@ -19,7 +19,7 @@ test('users can authenticate using the login screen', function () {
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('frontend.account.dashboard', absolute: false));
 
     $this->assertAuthenticated();
 });
@@ -61,7 +61,8 @@ test('users can logout', function () {
 
     $response = $this->actingAs($user)->post(route('logout'));
 
-    $response->assertRedirect(route('home'));
+    // Signing out returns the visitor to the front door they came through.
+    $response->assertRedirect(route('login'));
 
     $this->assertGuest();
 });

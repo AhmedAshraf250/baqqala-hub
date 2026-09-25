@@ -11,3 +11,9 @@ parameters:
         - routes/
 
     level: 7
+
+    # A module's defaults are merged into configuration at boot, so they are
+    # captured by config:cache exactly like the files in config/.
+    configDirectories:
+        - %currentWorkingDirectory%/config
+        - %currentWorkingDirectory%/app/Modules/*/Config

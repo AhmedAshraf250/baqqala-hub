@@ -1,0 +1,11 @@
+/*
+ * Admin area stylesheet — right-to-left.
+ *
+ * Identical to app.css except for AdminLTE's mirrored build. The two must
+ * never load on the same page; `<x-admin::layout.assets>` picks one.
+ */
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+@import 'overlayscrollbars/styles/overlayscrollbars.css';
+@import 'admin-lte/dist/css/adminlte.rtl.css';
+
+@import './_theme.css';

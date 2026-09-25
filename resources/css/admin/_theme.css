@@ -1,0 +1,94 @@
+/*
+ * The admin area's theming, written once and imported by both the LTR and RTL
+ * entry points. Everything here is expressed as Bootstrap/AdminLTE custom
+ * properties so it survives AdminLTE upgrades without merge conflicts.
+ *
+ * Sidebar width, breakpoints, and the spacing scale are NOT custom properties
+ * in AdminLTE 4 — changing those needs a SCSS build, which this project has
+ * deliberately not taken on.
+ */
+
+:root,
+[data-bs-theme='light'] {
+    --bs-border-radius: 0.5rem;
+    --bs-border-radius-lg: 0.75rem;
+    --bs-body-bg: #f4f6f9;
+}
+
+[data-bs-theme='dark'] {
+    --bs-body-bg: #14171c;
+}
+
+/* Arabic reads poorly in the Latin-first default stack, so the app font leads
+   with a face that covers both scripts at the same optical size. */
+:root {
+    --bs-font-sans-serif: 'Cairo', 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ---- Component surface ------------------------------------------------- */
+
+/* Digits stay LTR inside RTL text (standard Unicode bidi), so monospace
+   figures in tables line up on the decimal point. */
+.font-monospace {
+    font-variant-numeric: tabular-nums;
+}
+
+.empty-state-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+/* The sidebar brand initial, used in place of a logo file. */
+.sidebar-brand .brand-image {
+    width: 2rem;
+    height: 2rem;
+    font-weight: 700;
+}
+
+/* Initials avatars, in the four sizes the shell uses. The initials scale with
+   the circle, so one variable sets both. */
+.avatar {
+    --avatar-size: 2.5rem;
+    width: var(--avatar-size);
+    height: var(--avatar-size);
+    font-size: calc(var(--avatar-size) / 2.6);
+}
+
+.avatar-sm { --avatar-size: 1.75rem; }
+.avatar-lg { --avatar-size: 4.5rem; }
+.avatar-xl { --avatar-size: 6rem; }
+
+/* The user menu's header circle, sized and ringed the way AdminLTE sizes the
+   photo it was drawn for. */
+.user-menu .user-header > .avatar {
+    --avatar-size: 90px;
+    border: 3px solid var(--bs-border-color-translucent);
+}
+
+/* The user menu's body and footer sit on AdminLTE's light grey, where the
+   template's own blue links (4.15:1), grey outline (4.33:1), and red outline
+   (4.18:1) all fall short, and the grey falls to 3.83:1 on the dark menu.
+   Bootstrap's emphasis colours are the pair it designed for each mode. */
+.user-menu .user-body a {
+    color: var(--bs-primary-text-emphasis);
+}
+
+.user-menu .user-footer .btn-outline-secondary {
+    --bs-btn-color: var(--bs-body-color);
+}
+
+.user-menu .user-footer .btn-outline-danger {
+    --bs-btn-color: var(--bs-danger-text-emphasis);
+}
+
+/* The theme switcher's menu holds three short words; Bootstrap's default
+   minimum width leaves it mostly empty. */
+.theme-menu {
+    --bs-dropdown-min-width: 9rem;
+}
+
+/* The header search stays a comfortable width on wide screens rather than
+   stretching across the whole bar. */
+.global-search {
+    max-width: 32rem;
+}

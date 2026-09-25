@@ -127,9 +127,18 @@ return [
     |
     */
 
+    // `base_cookie` is the customer area's cookie and the stem the admin
+    // area's is derived from. `BindAreaSession` rewrites `cookie` per request
+    // to point the session at the right area, so it must never be the source
+    // of its own next value — that appended `_admin` twice.
+    'base_cookie' => env(
+        'SESSION_COOKIE',
+        Str::slug((string) env('APP_NAME', 'laravel'), '_').'_session'
+    ),
+
     'cookie' => env(
         'SESSION_COOKIE',
-        Str::slug((string) env('APP_NAME', 'laravel')).'-session',
+        Str::slug((string) env('APP_NAME', 'laravel'), '_').'_session'
     ),
 
     /*

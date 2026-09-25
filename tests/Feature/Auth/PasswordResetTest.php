@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use App\Foundation\Identity\Models\FrontendUser;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
@@ -18,7 +18,9 @@ test('reset password link screen can be rendered', function () {
 test('reset password link can be requested', function () {
     Notification::fake();
 
-    $user = User::factory()->create();
+    // The `customers` password broker resolves through FrontendUser, so the
+    // notifiable the broker sends to is that model, not the base User.
+    $user = FrontendUser::factory()->create();
 
     $this->post(route('password.request'), ['email' => $user->email]);
 
@@ -28,7 +30,9 @@ test('reset password link can be requested', function () {
 test('reset password screen can be rendered', function () {
     Notification::fake();
 
-    $user = User::factory()->create();
+    // The `customers` password broker resolves through FrontendUser, so the
+    // notifiable the broker sends to is that model, not the base User.
+    $user = FrontendUser::factory()->create();
 
     $this->post(route('password.request'), ['email' => $user->email]);
 
@@ -44,7 +48,9 @@ test('reset password screen can be rendered', function () {
 test('password can be reset with valid token', function () {
     Notification::fake();
 
-    $user = User::factory()->create();
+    // The `customers` password broker resolves through FrontendUser, so the
+    // notifiable the broker sends to is that model, not the base User.
+    $user = FrontendUser::factory()->create();
 
     $this->post(route('password.request'), ['email' => $user->email]);
 

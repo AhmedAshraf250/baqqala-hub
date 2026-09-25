@@ -2,16 +2,23 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
+use App\Foundation\Area\Area;
+use App\Foundation\Identity\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
+ * Shared by `User`, `AdminUser`, and `FrontendUser`, which are three views of
+ * one table. Calling `AdminUser::factory()` keeps `$model` pointed at the
+ * subclass, so the created row is one that guard can actually see.
+ *
  * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
+    protected $model = User::class;
+
     /**
      * The current password being used by the factory.
      */
@@ -27,6 +34,7 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'area' => Area::Frontend,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
@@ -34,6 +42,26 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
         ];
+    }
+
+    /**
+     * Indicate that the user belongs to the admin area.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'area' => Area::Admin,
+        ]);
+    }
+
+    /**
+     * Indicate that the user belongs to the frontend.
+     */
+    public function frontend(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'area' => Area::Frontend,
+        ]);
     }
 
     /**

@@ -1,12 +1,12 @@
 <?php
 
-use App\Models\User;
+use App\Foundation\Identity\Models\User;
 use Livewire\Livewire;
 
 test('profile page is displayed', function () {
     $this->actingAs($user = User::factory()->create());
 
-    $this->get(route('profile.edit'))->assertOk();
+    $this->get(route('frontend.account.settings.profile'))->assertOk();
 });
 
 test('profile information can be updated', function () {
@@ -14,7 +14,7 @@ test('profile information can be updated', function () {
 
     $this->actingAs($user);
 
-    $response = Livewire::test('pages::settings.profile')
+    $response = Livewire::test('frontend::page.account.settings.profile')
         ->set('name', 'Test User')
         ->set('email', 'test@example.com')
         ->call('updateProfileInformation');
@@ -33,7 +33,7 @@ test('email verification status is unchanged when email address is unchanged', f
 
     $this->actingAs($user);
 
-    $response = Livewire::test('pages::settings.profile')
+    $response = Livewire::test('frontend::page.account.settings.profile')
         ->set('name', 'Test User')
         ->set('email', $user->email)
         ->call('updateProfileInformation');
@@ -48,7 +48,7 @@ test('user can delete their account', function () {
 
     $this->actingAs($user);
 
-    $response = Livewire::test('pages::settings.delete-user-modal')
+    $response = Livewire::test('frontend::page.account.settings.delete-user-modal')
         ->set('password', 'password')
         ->call('deleteUser');
 
@@ -65,7 +65,7 @@ test('correct password must be provided to delete account', function () {
 
     $this->actingAs($user);
 
-    $response = Livewire::test('pages::settings.delete-user-modal')
+    $response = Livewire::test('frontend::page.account.settings.delete-user-modal')
         ->set('password', 'wrong-password')
         ->call('deleteUser');
 

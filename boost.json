@@ -1,6 +1,7 @@
 {
     "agents": [
-        "codex"
+        "codex",
+        "claude_code"
     ],
     "cloud": false,
     "guidelines": true,
@@ -17,6 +18,7 @@
         "livewire-development",
         "pest-testing",
         "tailwindcss-development",
-        "blaze-optimize"
+        "blaze-optimize",
+        "ui-ux-development"
     ]
 }

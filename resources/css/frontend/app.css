@@ -1,0 +1,98 @@
+/*
+ * Frontend stylesheet — Tailwind + Flux.
+ *
+ * source(none) turns off Tailwind's scan of the whole project, which would
+ * pull every admin view into this bundle. Only the frontend's own sources are
+ * scanned: its views, its component classes and scripts, Flux, and whatever
+ * frontend views the modules carry.
+ */
+@import 'tailwindcss' source(none);
+@import '../../../vendor/livewire/flux/dist/flux.css';
+
+@source '../../views/frontend';
+@source '../../views/flux';
+@source '../../js/frontend';
+@source '../../../app/Frontend';
+@source '../../../app/Modules/*/Resources/views/frontend';
+@source '../../../app/Modules/*/View/Components/Frontend';
+@source '../../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../../vendor/livewire/flux/stubs/**/*.blade.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    /* Instrument Sans has no Arabic, so Cairo follows it: an Arabic name on an
+       English page is drawn in Cairo, not in whatever the system has. */
+    --font-sans: 'Instrument Sans', 'Cairo', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-zinc-50: #fafafa;
+    --color-zinc-100: #f5f5f5;
+    --color-zinc-200: #e5e5e5;
+    --color-zinc-300: #d4d4d4;
+    --color-zinc-400: #a3a3a3;
+    --color-zinc-500: #737373;
+    --color-zinc-600: #525252;
+    --color-zinc-700: #404040;
+    --color-zinc-800: #262626;
+    --color-zinc-900: #171717;
+    --color-zinc-950: #0a0a0a;
+
+    /* Tailwind's red-500 is 3.8:1 against white, so Flux's danger button and
+       its error text failed WCAG AA. Each step moves one shade darker: 4.8:1
+       and 6.4:1, and the hover still differs from the resting colour. */
+    --color-red-500: oklch(57.7% 0.245 27.325);
+    --color-red-600: oklch(50.5% 0.213 27.518);
+
+    --color-accent: var(--color-neutral-800);
+    --color-accent-content: var(--color-neutral-800);
+    --color-accent-foreground: var(--color-white);
+}
+
+@layer theme {
+    /* An Arabic page leads with Cairo, digits and Latin included, so a line
+       keeps one optical size — the choice the admin area makes. */
+    :root:lang(ar) {
+        --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    }
+
+    .dark {
+        --color-accent: var(--color-white);
+        --color-accent-content: var(--color-white);
+        --color-accent-foreground: var(--color-neutral-800);
+    }
+}
+
+@layer base {
+
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+[data-flux-field]:not(ui-radio, ui-checkbox) {
+    @apply grid gap-2;
+}
+
+/* Flux draws a sidebar group's heading in zinc-400 in both modes: 2.4:1 on
+   the light sidebar. zinc-500 reads at 4.5:1; the dark sidebar keeps zinc-400. */
+[data-flux-sidebar-group] > div > .text-zinc-400 {
+    @apply text-zinc-500 dark:text-zinc-400;
+}
+
+[data-flux-label] {
+    @apply  !mb-0 !leading-tight;
+}
+
+input:focus[data-flux-control],
+textarea:focus[data-flux-control],
+select:focus[data-flux-control] {
+    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+}
+
+/* \[:where(&)\]:size-4 {
+    @apply size-4;
+} */

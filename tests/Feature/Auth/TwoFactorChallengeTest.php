@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use App\Foundation\Identity\Models\User;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {

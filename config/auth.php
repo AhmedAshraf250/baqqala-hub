@@ -1,6 +1,7 @@
 <?php
 
-use App\Models\User;
+use App\Foundation\Identity\Models\AdminUser;
+use App\Foundation\Identity\Models\FrontendUser;
 
 return [
 
@@ -15,9 +16,11 @@ return [
     |
     */
 
+    // The frontend is the default: it is the public face of the product, and
+    // Fortify serves it. The admin area names its guard explicitly everywhere.
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'passwords' => env('AUTH_PASSWORD_BROKER', 'frontend_users'),
     ],
 
     /*
@@ -38,9 +41,17 @@ return [
     */
 
     'guards' => [
+        // Two guards, two session keys. A frontend session is unresolvable on
+        // the admin guard and vice versa, so forgetting an `admin` middleware
+        // on a route is no longer enough to let the wrong area in.
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'frontend_users',
+        ],
+
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
         ],
     ],
 
@@ -62,15 +73,18 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        // Both read the same `users` table; each model carries a global scope
+        // that hides the other area's rows, so a provider physically cannot
+        // return a login from the wrong area.
+        'frontend_users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+            'model' => FrontendUser::class,
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => AdminUser::class,
+        ],
     ],
 
     /*
@@ -93,12 +107,16 @@ return [
     */
 
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
+        // The frontend only. An administrator's password is reset by another
+        // administrator or from the console, never through a public form, so
+        // the admin area has no broker for a reset link to be issued against.
+        'frontend_users' => [
+            'provider' => 'frontend_users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,
         ],
+
     ],
 
     /*

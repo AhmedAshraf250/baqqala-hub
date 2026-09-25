@@ -15,6 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            // The one area this login opens. Defaults to the least privileged,
+            // so a row created without saying otherwise cannot enter the admin.
+            $table->string('area', 20)->default('frontend')->index();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

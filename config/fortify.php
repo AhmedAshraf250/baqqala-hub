@@ -15,6 +15,8 @@ return [
     |
     */
 
+    // The frontend guard. Administrators authenticate on the `admin` guard, outside
+    // Fortify, in App\Admin\Http\Controllers\Auth.
     'guard' => 'web',
 
     /*
@@ -28,7 +30,9 @@ return [
     |
     */
 
-    'passwords' => 'users',
+    // Fortify serves the frontend, so it uses the frontend-scoped
+    // broker. A reset token issued here cannot redeem an admin login.
+    'passwords' => 'frontend_users',
 
     /*
     |--------------------------------------------------------------------------
@@ -73,7 +77,14 @@ return [
     |
     */
 
-    'home' => '/dashboard',
+    'home' => '/account',
+
+    // Fortify serves the frontend only, so its own responses already land in
+    // the right place: the account after signing in or verifying, and back to
+    // the front door after signing out.
+    'redirects' => [
+        'logout' => '/login',
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -161,7 +172,12 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Registration is deliberately absent. A customer is someone the shop
+        // already does business with, so their identity originates inside the
+        // admin area: the shop adds them with CreateCustomer, and hands them a
+        // login with GrantPortalAccess if and when it wants to. A public
+        // sign-up form would create a second, unlinked identity for a person
+        // already in the books.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
