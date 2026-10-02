@@ -2,6 +2,7 @@
 
 namespace App\Foundation;
 
+use App\Foundation\Area\Area;
 use App\Foundation\Console\AboutFoundation;
 use App\Foundation\Console\Modules\ListModulesCommand;
 use App\Foundation\Console\Modules\ShowModuleCommand;
@@ -14,12 +15,12 @@ use App\Foundation\Modules\ModuleServiceProvider;
 use App\Foundation\Modules\Sync\SyncCaches;
 use App\Foundation\Modules\Sync\SyncMigrations;
 use Carbon\CarbonImmutable;
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -67,6 +68,10 @@ final class FoundationServiceProvider extends ServiceProvider
             SyncCommand::class,
             UninstallModuleCommand::class,
         ]);
+
+        // Here, not with the other production defaults: a web request has no
+        // use for it, and naming the class there loaded it on every page.
+        UninstallModuleCommand::prohibit($this->app->environment('production'));
 
         AboutCommand::add('Foundation', AboutFoundation::class);
     }
@@ -136,7 +141,6 @@ final class FoundationServiceProvider extends ServiceProvider
         $production = $this->app->environment('production');
 
         DB::prohibitDestructiveCommands($production);
-        UninstallModuleCommand::prohibit($production);
 
         Password::defaults(
             static fn (): ?Password => $production
@@ -153,30 +157,35 @@ final class FoundationServiceProvider extends ServiceProvider
     /**
      * The limits both front doors are throttled by.
      *
-     * Named once here because both areas' sign-in routes use them; each area
-     * still counts separately, since a failed admin login and a failed customer
-     * login are keyed by the address and IP that made them.
+     * Named once here because both areas' sign-in routes use them. Each area
+     * counts its own failures: the area is part of the key, so someone locked
+     * out of one front door is not locked out of the other.
+     *
+     * Defined when the limiter is first asked for, not at boot: building it
+     * builds the cache store, and most requests never throttle anything.
      */
     private function configureRateLimiting(): void
     {
-        RateLimiter::for('login', static function (Request $request): Limit {
-            $throttleKey = Str::transliterate(
-                Str::lower((string) $request->input(Fortify::username())).'|'.$request->ip(),
-            );
+        $this->callAfterResolving(RateLimiter::class, static function (RateLimiter $limiter): void {
+            $limiter->for('login', static function (Request $request): Limit {
+                $throttleKey = Area::fromRequest($request)->value.'|'.Str::transliterate(
+                    Str::lower((string) $request->input(Fortify::username())).'|'.$request->ip(),
+                );
 
-            return Limit::perMinute(5)->by($throttleKey);
-        });
+                return Limit::perMinute(5)->by($throttleKey);
+            });
 
-        RateLimiter::for('two-factor', static function (Request $request): Limit {
-            return Limit::perMinute(5)->by((string) $request->session()->get('login.id'));
-        });
+            $limiter->for('two-factor', static function (Request $request): Limit {
+                return Limit::perMinute(5)->by((string) $request->session()->get('login.id'));
+            });
 
-        RateLimiter::for('passkeys', static function (Request $request): Limit {
-            $credentialId = $request->input('credential.id');
+            $limiter->for('passkeys', static function (Request $request): Limit {
+                $credentialId = $request->input('credential.id');
 
-            return Limit::perMinute(10)->by(
-                ($credentialId ?: $request->session()->getId()).'|'.$request->ip(),
-            );
+                return Limit::perMinute(10)->by(
+                    ($credentialId ?: $request->session()->getId()).'|'.$request->ip(),
+                );
+            });
         });
     }
 }

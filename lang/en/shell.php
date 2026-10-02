@@ -177,7 +177,6 @@ return [
     'page' => [
         'home' => [
             'title' => 'Welcome',
-            'heading' => 'Baqqala',
             'intro' => 'A flexible base for managing products, customers, accounts, and stock.',
         ],
         'dashboard' => [

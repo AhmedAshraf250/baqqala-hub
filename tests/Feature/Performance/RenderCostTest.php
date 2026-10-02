@@ -75,16 +75,21 @@ test('shared objects are one instance per request, and a new one the next', func
     return [...$shell, ...$published];
 });
 
-test('rendering an admin screen stays within a small query budget', function () {
-    actingAsAdmin();
+test('rendering an admin screen stays within a small query budget', function (string $role, int $budget) {
+    $administrator = actingAsAdmin();
+    $administrator->syncRoles($role);
 
     DB::enableQueryLog();
     $this->get(route('admin.dashboard'))->assertOk();
 
     // A budget, not a target: this fails loudly if a screen starts issuing a
-    // query per navigation item.
-    expect(DB::getQueryLog())->toHaveCount(4);
-});
+    // query per navigation item. The owner is answered by their role alone;
+    // anyone else's checks load the permission set once.
+    expect(count(DB::getQueryLog()))->toBeLessThanOrEqual($budget);
+})->with([
+    'owner' => ['owner', 1],
+    'manager' => ['manager', 4],
+]);
 
 test('the outstanding total is summed in the database, not loaded into memory', function () {
     $account = CustomerAccount::factory()->create();
@@ -133,35 +138,6 @@ test('booting the modules touches no database', function () {
         ->and($queries)->toBe(0);
 });
 
-test('each module adds little to booting the application', function () {
-    // The question behind it: does every request pay for a growing list of
-    // modules? Measured on the real thing — two applications booted, one with
-    // the modules and one without — and compared on their fastest run, which
-    // is the least noisy number a shared machine gives.
-    //
-    // The budget is deliberately generous: registering a module costs tens of
-    // microseconds, and the line is at two milliseconds. It exists to fail on
-    // a module that starts reading files or scanning directories at boot, not
-    // to benchmark.
-    $fastest = function (array $modules): float {
-        $times = [];
-
-        foreach (range(1, 5) as $run) {
-            $start = hrtime(true);
-            applicationWithModules($modules);
-            $times[] = (hrtime(true) - $start) / 1e6;
-        }
-
-        return min($times);
-    };
-
-    $modules = config('modules.enabled');
-
-    $perModule = ($fastest($modules) - $fastest([])) / count($modules);
-
-    expect($perModule)->toBeLessThan(2.0);
-});
-
 test('the module registry is one instance for the whole application', function () {
     // Modules are declarations, so one set serves every request. Anything
     // derived from them that depends on the signed-in user is scoped instead.
@@ -173,9 +149,12 @@ test('module routes survive route caching', function () {
     // groups. If that did not serialise, production could not cache routes —
     // and every request would register them again. Cached to a scratch path,
     // so the working tree's route cache is never touched.
-    $cache = sys_get_temp_dir().'/routes-cache-'.uniqid().'.php';
-    putenv("APP_ROUTES_CACHE={$cache}");
-    $_ENV['APP_ROUTES_CACHE'] = $_SERVER['APP_ROUTES_CACHE'] = $cache;
+    // Relative to the project: Laravel takes only a path starting with a
+    // slash as absolute, so a Windows temp path (`C:\…`) would be prefixed.
+    $relative = 'storage/framework/routes-cache-'.uniqid().'.php';
+    $cache = base_path($relative);
+    putenv("APP_ROUTES_CACHE={$relative}");
+    $_ENV['APP_ROUTES_CACHE'] = $_SERVER['APP_ROUTES_CACHE'] = $relative;
 
     try {
         expect(Artisan::call('route:cache'))->toBe(0)

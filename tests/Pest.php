@@ -110,19 +110,60 @@ function actingAsCustomer(?FrontendUser $user = null): FrontendUser
 }
 
 /**
+ * A path with forward slashes, whatever the operating system.
+ *
+ * The rules below compare and print paths as `app/Modules/…`; on Windows PHP
+ * hands them back with backslashes, and a rule comparing the two passes or
+ * fails by accident.
+ */
+function posixPath(string $path): string
+{
+    return str_replace('\\', '/', $path);
+}
+
+/**
+ * A path relative to the project root, with forward slashes.
+ */
+function projectRelativePath(string $path): string
+{
+    return Str::after(posixPath($path), posixPath(base_path()).'/');
+}
+
+/**
+ * Read the next requests in a language, in whichever area they open — each
+ * area keeps its own choice.
+ */
+function readingIn(string $locale): void
+{
+    foreach (Area::cases() as $area) {
+        test()->withCookie($area->localeCookie(), $locale);
+    }
+}
+
+/**
  * Every routed admin screen, so a new page cannot quietly skip these checks.
  *
  * @return list<string>
  */
 function adminScreens(): array
 {
+    // Every one, the planned screens included: a test in ArchitectureTest
+    // fails when a routed screen is missing from this list.
     return [
         'admin.dashboard',
         'admin.settings',
         'admin.profile',
-        // One module screen, to prove a module's route renders in the shell
-        // exactly like the shell's own.
+        'admin.access.administrators.index',
+        'admin.access.roles.index',
         'admin.catalog.products.index',
+        'admin.catalog.categories.index',
+        'admin.catalog.stock.index',
+        'admin.customers.index',
+        'admin.accounts.index',
+        'admin.suppliers.index',
+        'admin.purchases.index',
+        'admin.sales.index',
+        'admin.reports.index',
     ];
 }
 
@@ -139,6 +180,7 @@ function customerScreens(): array
 {
     return [
         'frontend.account.dashboard',
+        'frontend.account.settings.home',
         'frontend.account.settings.profile',
         'frontend.account.settings.appearance',
         'frontend.account.settings.security',

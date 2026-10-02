@@ -5,6 +5,7 @@ use App\Foundation\Identity\Models\FrontendUser;
 use App\Modules\Accounts\Contracts\AccountRepositoryInterface;
 use App\Modules\Accounts\Database\Models\CustomerAccount;
 use App\Modules\Customers\Contracts\CustomerRepositoryInterface;
+use App\Modules\Customers\Contracts\Data\CustomerData;
 use App\Modules\Customers\Database\Models\Customer;
 use App\Modules\Customers\Domain\Actions\CreateCustomer;
 use App\Modules\Customers\Domain\Actions\GrantPortalAccess;
@@ -102,4 +103,31 @@ test('a customer can only be linked to a frontend login', function () {
     $parameter = (new ReflectionMethod(CreateCustomer::class, 'handle'))->getParameters()[1];
 
     expect((string) $parameter->getType())->toBe('?'.FrontendUser::class);
+});
+
+test('a customer added with a login is linked to it', function () {
+    $login = FrontendUser::factory()->create();
+
+    $customer = app(CreateCustomer::class)->handle(['name' => 'أبو علي'], $login);
+
+    expect($customer->userId)->toBe($login->getKey())
+        ->and(Customer::query()->find($customer->id)?->user_id)->toBe($login->getKey());
+});
+
+test('saving a customer through the repository never links or unlinks a login', function () {
+    // The repository is what other modules hold. Through it, any of them
+    // could once attach an administrator's login to a customer, or detach a
+    // customer's own — the rules GrantPortalAccess keeps, skipped.
+    $customers = app(CustomerRepositoryInterface::class);
+    $linked = app(CreateCustomer::class)->handle(['name' => 'أم أحمد'], FrontendUser::factory()->create());
+    $unlinked = app(CreateCustomer::class)->handle(['name' => 'أبو علي']);
+    $stranger = FrontendUser::factory()->create();
+
+    $customers->save(new CustomerData($linked->id, $linked->name, null, null, null, userId: null));
+    $customers->save(new CustomerData($unlinked->id, $unlinked->name, null, null, null, userId: $stranger->getKey()));
+    $created = $customers->save(new CustomerData(null, 'جديد', null, null, null, userId: $stranger->getKey()));
+
+    expect($customers->find($linked->id)?->userId)->toBe($linked->userId)
+        ->and($customers->find($unlinked->id)?->userId)->toBeNull()
+        ->and($created->userId)->toBeNull();
 });

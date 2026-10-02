@@ -1,8 +1,10 @@
 {{--
     The notifications bell.
 
-    `$notifications` is empty until a module supplies it; the badge hides itself
-    and the menu falls back to an empty state, so this is safe to ship now.
+    `$notifications` is empty, and there is no way yet for a module to supply
+    it — that is a capability interface in app/Admin/Contracts, to come with
+    the first module that needs it. The badge hides itself and the menu shows
+    its empty state, so this is safe to ship now.
 --}}
 @php
     /** @var \Illuminate\Support\Collection<int, array{title: string, time: string, icon: string}> $notifications */

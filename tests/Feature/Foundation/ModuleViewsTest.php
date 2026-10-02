@@ -1,6 +1,10 @@
 <?php
 
+use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Bootstrap\LoadConfiguration;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
 use Tests\Fixtures\Modules\Probe\ProbeServiceProvider;
 
@@ -12,6 +16,41 @@ use Tests\Fixtures\Modules\Probe\ProbeServiceProvider;
 
 beforeEach(function () {
     app()->register(ProbeServiceProvider::class);
+});
+
+test('registered view namespaces can be cached even before modules have templates', function () {
+    // Into a scratch directory: `view:cache` begins with `view:clear`, and run
+    // against storage/ it deleted the compiled views — Livewire's included —
+    // that every later test in the run was reading.
+    // A fresh application, so every compiler is built with that path from the
+    // start, and every enabled module is registered the way it is in use.
+    $compiled = sys_get_temp_dir().'/compiled-views-'.uniqid();
+    File::ensureDirectoryExists($compiled);
+
+    $app = require base_path('bootstrap/app.php');
+    $app->afterBootstrapping(
+        LoadConfiguration::class,
+        static fn (Application $app) => $app['config']->set('view.compiled', $compiled),
+    );
+    $kernel = $app->make(ConsoleKernel::class);
+    $kernel->bootstrap();
+
+    try {
+        expect($kernel->call('view:cache'))->toBe(0)
+            ->and(File::allFiles($compiled))->not->toBeEmpty();
+    } finally {
+        File::deleteDirectory($compiled);
+    }
+});
+
+test('every enabled module has the views directory its namespace points at', function () {
+    // The namespace is registered without looking at the disk, and
+    // `view:cache` — run by `optimize` — fails on a directory that is not there.
+    foreach (config('modules.enabled') as $provider) {
+        $views = dirname((new ReflectionClass($provider))->getFileName()).'/Resources/views';
+
+        expect(is_dir($views))->toBeTrue("{$provider} has no Resources/views directory");
+    }
 });
 
 test('a module\'s view renders under its key', function () {

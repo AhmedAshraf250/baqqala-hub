@@ -1,5 +1,8 @@
 <?php
 
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Support\Env;
+
 test('the foundation and the admin area expose their defaults', function () {
     expect(config('foundation.locales.supported.ar.direction'))->toBe('rtl')
         ->and(config('foundation.locales.supported.en.direction'))->toBe('ltr')
@@ -18,7 +21,6 @@ test('every translation key resolves in every supported locale', function () {
         'shell.brand.name',
         'shell.navigation.dashboard',
         'shell.actions.login',
-        'shell.page.home.heading',
         'shell.roles.owner',
         'foundation.areas.admin',
         'accounts::module.transaction_type.debit',
@@ -90,3 +92,34 @@ test('every environment key the configuration reads is documented', function () 
 
     expect($missing)->toBe([]);
 });
+
+test('the session cookie is HTTPS-only exactly when the site is served over HTTPS', function (string $url, bool $httpsOnly) {
+    // Without the flag, a browser on a café's Wi-Fi that once opens the site
+    // over plain http:// sends the session cookie in the clear, and anyone on
+    // that network can copy it and be signed in as its owner. With it set by
+    // hand, a development machine on http://127.0.0.1 could not sign in at
+    // all — so it follows APP_URL.
+    $previous = [$_ENV['APP_URL'] ?? null, $_SERVER['APP_URL'] ?? null, getenv('APP_URL')];
+    $_ENV['APP_URL'] = $_SERVER['APP_URL'] = $url;
+    putenv("APP_URL={$url}");
+
+    // The process keeps one environment reader, and it remembers loading
+    // APP_URL from .env itself — so a second boot would write .env's value back
+    // over this one. A fresh reader treats it as set from outside, as a
+    // server's real environment is.
+    Env::enablePutenv();
+
+    try {
+        $app = require base_path('bootstrap/app.php');
+        $app->make(Kernel::class)->bootstrap();
+
+        expect($app['config']->get('session.secure'))->toBe($httpsOnly);
+    } finally {
+        [$_ENV['APP_URL'], $_SERVER['APP_URL']] = $previous;
+        putenv($previous[2] === false ? 'APP_URL' : "APP_URL={$previous[2]}");
+        Env::enablePutenv();
+    }
+})->with([
+    'a server on https' => ['https://shop.example', true],
+    'a development machine' => ['http://127.0.0.1:8000', false],
+]);

@@ -2,6 +2,7 @@
 
 namespace App\Admin\Http\Controllers;
 
+use App\Foundation\Area\Area;
 use App\Foundation\Localization\LocalePreference;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,8 +12,8 @@ use Illuminate\Validation\Rule;
  * The admin area's language switcher, including on its sign-in screen.
  *
  * Under `/admin` like everything else the admin posts, so the request opens
- * the admin session and its CSRF token. The choice itself is the reader's and
- * reaches the customer area too — see {@see LocalePreference}.
+ * the admin session and its CSRF token. The choice is the admin area's alone —
+ * see {@see LocalePreference}.
  */
 class UpdateLocaleController
 {
@@ -22,7 +23,7 @@ class UpdateLocaleController
             'locale' => ['required', 'string', Rule::in(LocalePreference::supported())],
         ]);
 
-        LocalePreference::store($validated['locale']);
+        LocalePreference::remember(Area::Admin, $validated['locale']);
 
         return back();
     }

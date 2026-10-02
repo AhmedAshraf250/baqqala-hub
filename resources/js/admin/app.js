@@ -9,8 +9,12 @@
 import 'bootstrap'
 import 'admin-lte'
 
+import { initAreaHeader } from './modules/area-header.js'
 import { initColorMode } from './modules/color-mode.js'
 import { initSidebarScrollbars } from './modules/sidebar.js'
+
+// Before the first Livewire request, not on DOMContentLoaded.
+initAreaHeader()
 
 document.addEventListener('DOMContentLoaded', () => {
     initColorMode()

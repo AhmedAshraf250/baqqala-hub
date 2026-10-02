@@ -32,7 +32,7 @@ use Laravel\Passkeys\Http\Controllers\PasskeyRegistrationController;
 | Authentication Routes
 |--------------------------------------------------------------------------
 |
-| Fortify's own route registration is switched off in FortifyServiceProvider
+| Fortify's own route registration is switched off in FrontendServiceProvider
 | (`Fortify::ignoreRoutes()`), so every auth endpoint in the application is
 | declared here where it can be read, reordered, renamed, and guarded.
 |
@@ -92,10 +92,11 @@ Route::middleware(config('fortify.middleware', ['web']))->group(function () use 
         Route::middleware('auth:admin')->group(function () {
             Route::post('logout', AdminLogoutController::class)->name('logout');
 
-            // The admin's own password confirmation. Laravel's shared
-            // `auth.password_confirmed_at` let a customer's confirmation
-            // unlock an admin screen; this one is keyed to the admin area and
-            // checks the password against the admin guard.
+            // The admin's own password confirmation. Laravel's one key,
+            // `auth.password_confirmed_at`, once let a customer's confirmation
+            // unlock an admin screen, back when the areas shared a session;
+            // this one is keyed to the admin area and checks the password
+            // against the admin guard.
             Route::get('user/confirm-password', [AdminConfirmPasswordController::class, 'show'])
                 ->name('password.confirm');
 

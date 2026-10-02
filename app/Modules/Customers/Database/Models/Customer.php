@@ -15,7 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * A person the shop does business with.
  *
  * Most customers never sign in: they are names in the ledger, and `user_id`
- * stays null. Private to this module — other modules see a customer as a
+ * stays null. It is not fillable: only CreateCustomer and GrantPortalAccess
+ * link a login, each in its own query. Private to this module — other modules see a customer as a
  * {@see CustomerData}, through `CustomerRepositoryInterface`, and hold only the
  * id.
  *
@@ -27,7 +28,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $notes
  */
 #[UseFactory(CustomerFactory::class)]
-#[Fillable(['user_id', 'name', 'phone', 'address', 'notes'])]
+#[Fillable(['name', 'phone', 'address', 'notes'])]
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */

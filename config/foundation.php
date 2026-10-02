@@ -41,6 +41,23 @@ return [
                 'direction' => 'ltr',
             ],
         ],
+
+        /*
+        | Each area keeps its own reader's choice, and may start from its own
+        | default. `negotiate` lets a first-time visitor's browser language
+        | decide before the default does — off, because many who read Arabic
+        | browse on phones set to English.
+        */
+        'areas' => [
+            'admin' => [
+                'default' => env('ADMIN_LOCALE'),
+                'negotiate' => (bool) env('ADMIN_LOCALE_NEGOTIATE', false),
+            ],
+            'frontend' => [
+                'default' => env('FRONTEND_LOCALE'),
+                'negotiate' => (bool) env('FRONTEND_LOCALE_NEGOTIATE', false),
+            ],
+        ],
     ],
 
     /*

@@ -1,8 +1,8 @@
 <?php
 
 use App\Admin\Http\Middleware\RequireAdminPasswordConfirmation;
+use App\Foundation\Area\Area;
 use App\Foundation\Identity\Models\AdminUser;
-use App\Foundation\Localization\LocalePreference;
 use Dom\HTMLDocument;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
@@ -39,6 +39,8 @@ test('an admin screen loads its own direction stylesheet and no other', function
     $this->withVite();
     actingAsAdmin();
     $this->withSession([RequireAdminPasswordConfirmation::SessionKey => time()]);
+    // A left-to-right reader; the Arabic swap is the next test.
+    readingIn('en');
 
     $html = $this->get(route($route))->assertOk()->getContent();
 
@@ -54,7 +56,7 @@ test('an arabic admin screen swaps to the mirrored stylesheet', function () {
     $this->withVite();
     actingAsAdmin();
 
-    $this->withCookie(LocalePreference::Cookie, 'ar');
+    $this->withCookie(Area::Admin->localeCookie(), 'ar');
 
     $html = $this->get(route('admin.dashboard'))->assertOk()->getContent();
 
@@ -69,7 +71,7 @@ test('an admin screen serves cairo itself, arabic included, preloading only its 
     $this->withVite();
     actingAsAdmin();
 
-    $html = $this->withCookie(LocalePreference::Cookie, $locale)
+    $html = $this->withCookie(Area::Admin->localeCookie(), $locale)
         ->get(route('admin.dashboard'))
         ->assertOk()
         ->getContent();

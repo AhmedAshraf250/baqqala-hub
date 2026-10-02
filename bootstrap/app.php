@@ -4,11 +4,13 @@ use App\Admin\Http\Middleware\EnsureUserIsAdmin;
 use App\Admin\Http\Middleware\RequireAdminPasswordConfirmation;
 use App\Foundation\Area\Area;
 use App\Foundation\Http\Middleware\BindAreaSession;
+use App\Foundation\Http\Middleware\PreventRequestForgeryWithoutCookie;
 use App\Foundation\Http\Middleware\SetLocale;
 use App\Frontend\Http\Middleware\EnsureUserIsFrontendUser;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -23,6 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // once and this has to have set it by then.
         $middleware->web(prepend: [BindAreaSession::class]);
 
+        // The CSRF token stays per area, in each area's session; only the
+        // site-wide `XSRF-TOKEN` copy of it goes.
+        $middleware->web(replace: [PreventRequestForgery::class => PreventRequestForgeryWithoutCookie::class]);
+
         // Language is decided before anything renders: direction, the AdminLTE
         // stylesheet, and every translated string depend on it. Appended, so
         // the preference cookie has been decrypted by the time it is read.
@@ -32,8 +38,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureUserIsAdmin::class,
             'frontend' => EnsureUserIsFrontendUser::class,
 
-            // Laravel's `password.confirm` keeps one timestamp for the whole
-            // session, which both areas share. The admin area uses its own.
+            // Laravel's `password.confirm` keeps its timestamp under one key,
+            // `auth.password_confirmed_at`, whichever guard confirmed it. The
+            // admin area keeps its own key, so the two can never be confused —
+            // a second line behind the separate sessions.
             'admin.password.confirm' => RequireAdminPasswordConfirmation::class,
         ]);
 

@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Lang;
-use Illuminate\Support\Str;
 
 /**
  * Every Blade file under a directory, relative to the project root.
@@ -14,7 +13,7 @@ function bladeFilesIn(string $directory): array
 
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path($directory))) as $file) {
         if ($file->isFile() && str_ends_with($file->getFilename(), '.blade.php')) {
-            $files[] = Str::after($file->getPathname(), base_path().'/');
+            $files[] = projectRelativePath($file->getPathname());
         }
     }
 
@@ -34,7 +33,7 @@ function allViews(): array
     return [
         ...bladeFilesIn('resources/views'),
         ...collect(glob(app_path('Modules/*/Resources/views')) ?: [])
-            ->flatMap(fn (string $path) => bladeFilesIn(Str::after($path, base_path().'/')))
+            ->flatMap(fn (string $path) => bladeFilesIn(projectRelativePath($path)))
             ->all(),
     ];
 }

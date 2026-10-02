@@ -2,9 +2,9 @@
     The header search box.
 
     This is the entry point for the fast customer/product lookup: it posts
-    nothing yet and has no results dropdown, but the markup, keyboard shortcut
-    hint, and ARIA wiring are in place so the search module only has to attach
-    a source.
+    nothing yet and has no results dropdown. The markup, keyboard shortcut hint,
+    and ARIA wiring are in place; how modules offer results to it is not built
+    yet.
 --}}
 <form class="d-none d-md-flex flex-grow-1 mx-3" role="search" action="#" method="GET" autocomplete="off">
     <div class="input-group global-search">

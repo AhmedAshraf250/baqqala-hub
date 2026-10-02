@@ -1,6 +1,6 @@
 <?php
 
-use App\Foundation\Localization\LocalePreference;
+use App\Foundation\Area\Area;
 
 /*
  * What the markup of each frontend screen decides for a screen reader or a
@@ -32,7 +32,7 @@ test('the sidebar buttons are named in the reader\'s language', function () {
     // Flux names them "Toggle sidebar" in English, whatever the locale.
     actingAsCustomer();
 
-    $html = $this->withCookie(LocalePreference::Cookie, 'ar')
+    $html = $this->withCookie(Area::Frontend->localeCookie(), 'ar')
         ->get(route('frontend.account.dashboard'))
         ->assertOk()
         ->getContent();

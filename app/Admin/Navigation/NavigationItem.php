@@ -36,17 +36,18 @@ final readonly class NavigationItem
      * Whether the signed-in administrator may see this item.
      *
      * An item with no permission is open to anyone already in the admin area.
-     * A branch survives if anything under it does, so a group never shows an
-     * empty submenu.
+     * A branch is checked against its own permission first — the routes under
+     * it carry that permission too, so a branch shown without it led only to
+     * 403s — and then survives only if anything under it does, so a group
+     * never shows an empty submenu.
      */
     public function isVisible(): bool
     {
-        if ($this->hasChildren()) {
-            return $this->visibleChildren() !== [];
+        if ($this->permission !== null && Area::Admin->user()?->can($this->permission->value) !== true) {
+            return false;
         }
 
-        return $this->permission === null
-            || auth(Area::Admin->guard())->user()?->can($this->permission->value) === true;
+        return ! $this->hasChildren() || $this->visibleChildren() !== [];
     }
 
     /**

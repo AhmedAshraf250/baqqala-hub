@@ -51,7 +51,10 @@ that mirrors its view: `<x-deliveries::admin.route-card>` is
 The class prepares; the template only renders — a test fails on a template
 that reaches for the container, the user, the request, the session, or a class.
 
-Create only the folders the module uses. Views, strings, and migrations are
+Create only the folders the module uses, with one exception: `Resources/views/`
+always exists, even if it holds only a `.gitkeep`, because the view namespace is
+registered without checking for it and `php artisan view:cache` (and so
+`optimize`) fails on a missing directory. Views, strings, and migrations are
 picked up by convention. Routes and config are **declared** in the provider —
 nothing looks for them on disk, and a test fails if a declared file is missing
 or a present one is undeclared.
@@ -236,10 +239,12 @@ role should get something its patterns do not.
   through `save()`: two requests can pass the same check.
 - **Events wait for the commit.** Every event in `Contracts/Events/` implements
   `ShouldDispatchAfterCommit`.
-- **The provider is a declaration.** No queries and no file reads in
-  `register()` or `boot()` — `RenderCostTest` fails otherwise.
+- **The provider is a declaration.** No queries in `register()` or `boot()` —
+  `RenderCostTest` fails otherwise — and no file reads, which no test catches.
 - **Nothing of yours goes in a shared file.** Not `lang/`, not `config/admin.php`,
-  not `database/migrations/`.
+  not `database/migrations/`. The one exception: each `env()` your
+  `Config/{key}.php` reads is listed in `.env.example`, because `.env` is one
+  file per installation.
 
 ## 8. When it is no longer wanted
 

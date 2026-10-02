@@ -1,8 +1,10 @@
 {{--
     The messages menu.
 
-    Same shape as the notifications bell: empty until a module supplies the
-    source, but fully wired so nothing has to be rebuilt later.
+    Same shape as the notifications bell, and empty for now: there is no way
+    yet for a module to supply messages. That is a capability interface in
+    app/Admin/Contracts, like navigation, to be added with the first module
+    that has something to say here.
 --}}
 @php
     /** @var \Illuminate\Support\Collection<int, array{from: string, excerpt: string, time: string}> $messages */

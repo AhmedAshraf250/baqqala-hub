@@ -45,12 +45,15 @@ final class CustomerRepository implements CustomerRepositoryInterface
             ? new Customer
             : Customer::query()->findOrFail($customer->id);
 
+        // Never `user_id`: which login opens a customer's portal is a rule —
+        // a frontend login, linked once, under a lock — kept by CreateCustomer
+        // and GrantPortalAccess. Through here, any module holding a DTO could
+        // link an administrator's login or unlink a customer's.
         $record->fill([
             'name' => $customer->name,
             'phone' => $customer->phone,
             'address' => $customer->address,
             'notes' => $customer->notes,
-            'user_id' => $customer->userId,
         ])->save();
 
         return $record->toData();

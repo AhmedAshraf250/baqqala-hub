@@ -15,6 +15,8 @@
                 <div class="flex flex-col gap-6">
                     {{ $slot }}
                 </div>
+
+                <x-frontend::ui.locale-switcher class="justify-center" />
             </div>
         </div>
 

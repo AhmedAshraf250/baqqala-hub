@@ -36,7 +36,7 @@ function projectDocuments(): array
     // The project's own skill, as written. Boost copies it, with its own
     // skills, into each agent's folder.
     foreach (glob(base_path('.ai/skills/ui-ux-development/{,references/}*.md'), GLOB_BRACE) ?: [] as $file) {
-        $documents[Str::after($file, base_path().'/')] = (string) file_get_contents($file);
+        $documents[projectRelativePath($file)] = (string) file_get_contents($file);
     }
 
     foreach (glob(base_path('docs/*.md')) ?: [] as $file) {

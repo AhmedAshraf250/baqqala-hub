@@ -44,6 +44,9 @@ final class ProfileRules
         return [
             'required',
             'string',
+            // Addresses are stored lowercased; the unique check below compares
+            // what was typed, so `Owner@…` would pass it beside `owner@…`.
+            'lowercase',
             'email',
             'max:255',
             $ignoreUserId === null

@@ -20,6 +20,8 @@
 
             <flux:spacer />
 
+            <x-frontend::ui.locale-switcher class="hidden lg:flex" />
+
             <x-frontend::ui.user-menu placement="sidebar" class="hidden lg:block" />
         </flux:sidebar>
 
@@ -27,6 +29,8 @@
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" :aria-label="__('shell.actions.toggle_sidebar')" />
 
             <flux:spacer />
+
+            <x-frontend::ui.locale-switcher />
 
             <x-frontend::ui.user-menu placement="header" />
         </flux:header>

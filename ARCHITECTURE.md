@@ -7,8 +7,8 @@
 > everything about itself — screens, strings, tables, settings, permissions.
 > `ArchitectureTest` fails the build when a layer reaches the wrong way.
 >
-> **To place a new file**, ask: *would this survive becoming a school system?*
-> Yes → foundation or shell. No → module.
+> **To place a new file**, ask: *is it about the shop's business?* Yes → that
+> business's module. About running the application? → foundation or shell.
 
 This file explains *why*. The rules themselves, short, are in
 [`AGENTS.md`](AGENTS.md). The recipe for a new module is
@@ -16,8 +16,9 @@ This file explains *why*. The rules themselves, short, are in
 reference is [`docs/adminlte.md`](docs/adminlte.md).
 
 A grocery-shop management system — catalog, stock, customers, and the running
-tabs customers settle later — built so the foundation can be lifted whole and
-retargeted at a school, a pharmacy, or a clinic. Laravel 13 · Livewire 4 ·
+tabs customers settle later. The business lives in modules and everything
+else beneath them, so a business change touches one module and nothing under
+it. Laravel 13 · Livewire 4 ·
 Fortify · spatie/laravel-permission · AdminLTE 4 · Flux.
 
 ---
@@ -48,10 +49,13 @@ shell's value objects, and the test that should have caught it skipped those
 files. An exemption in the test is how a rule stops being true without anyone
 noticing.
 
-**The test for a layer:** *if this became a school system tomorrow, would this
-file survive unchanged?* `Money` would (a school charges fees); so would the
-guards, the session separation, and the component library. A product would not,
-and nor would the permission `catalog.view`.
+**The test for a layer:** *is this file about the shop's business, or about
+running the application?* `Money` is about running it — any screen that shows
+an amount needs it — and so are the guards, the session separation, and the
+component library. A product is business, and so is the permission
+`catalog.view`. The question is about where a change lands, not about selling
+the code to someone else: a new rule for debts should touch the accounts
+module and nothing beneath it.
 
 `config/` is the one place allowed to name everything. It is where the product
 is *assembled*: `config/modules.php` says which modules run, `config/roles.php`
@@ -404,8 +408,10 @@ cost is kept flat by keeping modules **declarations**:
   the finder directly, not through `loadViewsFrom()`, which checks a `vendor/`
   directory per module per request. With `config:cache` and `route:cache` —
   production — module config and route files are not even opened.
-- `RenderCostTest` boots the real application with and without the modules and
-  fails if a module adds more than 2 ms, or if booting issues a single query.
+- `RenderCostTest` boots the real application and fails if booting issues a
+  single query. Time is not tested: a timing line fails at random on a busy
+  machine and proves nothing a query count does not. Reading files at boot is
+  a review rule, measured when it is in doubt, like the table below.
 
 Measured with 200 generated modules — each with permissions, a sidebar
 section, a published repository, and a listener — on a real boot:
@@ -501,9 +507,18 @@ refusal the middleware used to return. `LivewireIsolationTest` drives the real
 update endpoint to prove both.
 
 The Livewire endpoint lives outside `/admin`, which is why the admin cookie's
-path is `/` and why `Area::forSession()` falls back to the referrer for that one
-endpoint. The referrer only picks which cookie to open; the guard still decides
-who the visitor is, and a missing referrer falls back to the frontend.
+path is `/` and why `Area::forSession()` needs the page to say where an update
+came from. The admin bundle adds `Area::RequestHeader` (`X-Area: admin`) to
+every Livewire request (`resources/js/admin/modules/area-header.js`); only
+without it — a file upload, which Livewire sends outside its request pipeline —
+does the referrer decide. Relying on the referrer alone broke the admin area
+behind any proxy or privacy setting that strips it. Either one only picks which
+cookie to open; the guard still decides who the visitor is, and an update that
+names no area falls back to the frontend.
+
+The CSRF token follows the same rule. Laravel's `XSRF-TOKEN` cookie is one for
+the whole site, so both areas' layouts carry their own session's token in
+`<meta name="csrf-token">`, which script reads first.
 
 ### Two front doors
 
@@ -521,14 +536,30 @@ The first administrator is created with `php artisan app:admin:grant`, which
 refuses to convert a customer's login: that login is the key to their tab in the
 portal, and an administrator who also shops here uses a second address.
 
-### Language follows the reader
+### Language follows the reader, in each area
 
-The chosen language is a cookie of its own (`baqqala_locale`), not a session
-key. It used to live in the session; when the sessions were split per area, the
-code went on claiming "applies to both areas identically" while choosing English
-in the admin left the frontend in Arabic. The switcher posts to
-`/admin/locale` — under `/admin` so the request opens the admin session and its
-CSRF token — and the choice reaches both areas.
+Each area keeps its own reader's language, the way it keeps its own session:
+the shop's staff and its customers are different readers, and one browser can
+serve both. `LocalePreference::resolve()` takes the first answer of:
+
+1. the signed-in login's own choice (`users.locale`), so it follows the person
+   to another device — and mail sent to them, through `preferredLocale()`;
+2. this browser's choice in this area — its own cookie, `Area::localeCookie()`;
+3. the browser's language, only where the area allows it
+   (`foundation.locales.areas.{area}.negotiate`, off by default: many who read
+   Arabic browse on phones set to English);
+4. the area's default (`foundation.locales.areas.{area}.default`), then the
+   application's.
+
+Each area has its own switcher — `/admin/locale` under `/admin` so the request
+opens the admin session and its CSRF token, `/locale` on the site — and both
+write through `LocalePreference::remember()`: the area's cookie, and the login
+signed in to that area.
+
+It used to be one cookie for both areas, after an earlier session key had left
+each area with its own language by accident. That fixed the symptom by joining
+the areas: choosing English in the back office turned the site English for the
+next customer on the same browser, and the site had no switcher of its own.
 
 ---
 
@@ -731,6 +762,13 @@ without a decision:
   entering — a product decision, deferred.
 - **No audit trail.** Who changed what, and when, is the largest gap for a
   system that handles money.
+- **A customer without a login has no language.** `users.locale` covers logins;
+  a statement sent to someone who only exists in the books needs the language
+  on their customer record. Due with the first message sent to a customer.
+- **The site's language is not in its URLs.** One address serves both
+  languages, so a search engine indexes one and a shared link opens in the
+  reader's language, not the sender's. Due before the first public page that
+  should be found by search — the URL is the expensive thing to change later.
 
 Not built yet, in order: the customer directory with Arabic-aware name search
 (alef/hamza and taa-marbuta folding), the quick credit-entry form and account

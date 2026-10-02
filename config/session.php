@@ -178,7 +178,10 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Follows the site's own address unless set: a site served over HTTPS
+    // (`APP_URL=https://…`) never lets the browser send its session cookie over
+    // plain HTTP, and a development machine on `http://127.0.0.1` still works.
+    'secure' => env('SESSION_SECURE_COOKIE', str_starts_with((string) env('APP_URL', ''), 'https://')),
 
     /*
     |--------------------------------------------------------------------------

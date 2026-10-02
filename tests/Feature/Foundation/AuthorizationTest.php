@@ -6,11 +6,15 @@ use App\Admin\Authorization\RoleDefinitions;
 use App\Admin\Authorization\SyncPermissions;
 use App\Admin\Authorization\SyncRoleGrants;
 use App\Admin\Contracts\Authorization\ProvidesPermissionsInterface;
+use App\Admin\Contracts\Settings\ProvidesAdminSettingsInterface;
+use App\Admin\Settings\AdminSettings;
+use App\Admin\Settings\SettingsSection;
 use App\Foundation\Area\Area;
 use App\Foundation\Identity\Models\AdminUser;
 use App\Foundation\Identity\Models\FrontendUser;
 use App\Foundation\Modules\ModuleInspector;
 use App\Foundation\Modules\ModuleRegistry;
+use App\Foundation\Modules\ModuleServiceProvider;
 use App\Modules\Accounts\Authorization\AccountPermission;
 use App\Modules\Catalog\Authorization\CatalogPermission;
 use App\Modules\Catalog\CatalogServiceProvider;
@@ -19,6 +23,7 @@ use App\Modules\Purchases\PurchasesServiceProvider;
 use App\Modules\Sales\SalesServiceProvider;
 use Database\Seeders\AuthorizationSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -156,6 +161,21 @@ test('the sidebar hides what the administrator may not reach', function () {
         ->assertDontSee(__('shell.navigation.administrators'));
 });
 
+test('a menu group is hidden from whoever lacks its own permission', function () {
+    // The access-control group needs `access.view`, and so does every route
+    // under it. Shown because one of its children was allowed, it led to 403.
+    $role = Role::findOrCreate('reception', Area::Admin->guard());
+    $role->givePermissionTo(AdminPermission::ManageAdministrators->value);
+    actingAsAdminWithRole('reception');
+
+    $this->get(route('admin.dashboard'))
+        ->assertOk()
+        ->assertDontSee(__('shell.navigation.access'))
+        ->assertDontSee(__('shell.navigation.administrators'));
+
+    $this->get(route('admin.access.administrators.index'))->assertForbidden();
+});
+
 test('the owner sees every module section', function () {
     actingAsAdminWithRole('owner');
 
@@ -207,4 +227,53 @@ test('disabling a module takes its permissions off roles, and keeps the records'
 
     expect(Permission::query()->where('name', 'catalog.view')->exists())->toBeTrue()
         ->and(Role::findByName('manager', 'admin')->fresh()->hasPermissionTo('catalog.view'))->toBeFalse();
+});
+
+/**
+ * A module that adds one tab to the settings screen.
+ */
+function settingsContributingModule(): ModuleServiceProvider
+{
+    return new class(app()) extends ModuleServiceProvider implements ProvidesAdminSettingsInterface
+    {
+        public function key(): string
+        {
+            return 'probe';
+        }
+
+        public function adminSettings(): array
+        {
+            return [new SettingsSection('probe-tax', 'probe::admin.counter', 'shell.settings.account', 'shell.settings.account_description')];
+        }
+    };
+}
+
+test('a module\'s settings tab is shown only to who may configure the panel', function (string $role, bool $seesIt) {
+    // `settings.manage` was granted to the manager and withheld from the
+    // cashier, and checked nowhere: every administrator saw every tab.
+    app()->instance(ModuleRegistry::class, new ModuleRegistry([settingsContributingModule()]));
+    actingAsAdminWithRole($role);
+
+    $keys = app(AdminSettings::class)->sections()->pluck('key')->all();
+
+    expect(in_array('probe-tax', $keys, true))->toBe($seesIt)
+        ->and($keys)->toContain('account', 'security', 'appearance');
+})->with([
+    'owner' => ['owner', true],
+    'manager' => ['manager', true],
+    'cashier' => ['cashier', false],
+]);
+
+test('the owner is answered before the permission set is loaded', function () {
+    // spatie's own `before` is registered first unless the shortcut is in
+    // place by the time the Gate is built; it then loaded every permission
+    // for an answer the role already gave.
+    $owner = actingAsAdminWithRole('owner');
+    $queries = [];
+    DB::listen(function ($query) use (&$queries): void {
+        $queries[] = $query->sql;
+    });
+
+    expect($owner->can(CustomerPermission::View->value))->toBeTrue()
+        ->and(array_filter($queries, fn (string $sql): bool => str_contains($sql, 'permissions')))->toBe([]);
 });

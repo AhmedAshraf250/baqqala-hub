@@ -15,6 +15,9 @@ beforeEach(function () {
     Features::passkeys([
         'confirmPassword' => true,
     ]);
+
+    // The assertions below are the English strings.
+    readingIn('en');
 });
 
 test('security settings page can be rendered', function () {

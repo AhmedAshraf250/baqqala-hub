@@ -35,13 +35,23 @@ enum Area: string
     }
 
     /**
+     * The header an area's script adds to every Livewire request it sends.
+     */
+    public const RequestHeader = 'X-Area';
+
+    /**
      * The area whose session a request should open.
      *
-     * Every request is answered by its own URL except one: Livewire posts every
-     * component update to a single application-wide endpoint outside `/admin`.
-     * For that one, the page the update came from decides.
+     * Every request is answered by its own URL except Livewire's: it posts
+     * every component update to a single application-wide endpoint outside
+     * `/admin`. For those, the page says which area it belongs to — the admin
+     * bundle adds {@see self::RequestHeader} to each update — and failing that,
+     * the page the request came from does. The referrer alone was not enough:
+     * a proxy or a privacy setting that strips it, or trims it to the origin,
+     * sent every admin update to the frontend session and a 419. File uploads
+     * are sent outside Livewire's request pipeline, so they still rely on it.
      *
-     * The referrer only picks which session cookie to open — it is not an
+     * Either answer only picks which session cookie to open — it is not an
      * authorisation decision. The cookie is still the visitor's own, signed and
      * encrypted, and the guard still decides who they are.
      */
@@ -49,6 +59,14 @@ enum Area: string
     {
         if ($request->is('admin', 'admin/*')) {
             return self::Admin;
+        }
+
+        if ($request->hasHeader('X-Livewire')) {
+            $declared = self::tryFrom((string) $request->headers->get(self::RequestHeader));
+
+            if ($declared !== null) {
+                return $declared;
+            }
         }
 
         $referrer = $request->headers->get('referer');
@@ -80,6 +98,21 @@ enum Area: string
         return match ($this) {
             self::Admin => $base.'_admin',
             self::Frontend => $base,
+        };
+    }
+
+    /**
+     * The cookie this area remembers its reader's language in.
+     *
+     * Separate for the same reason the sessions are: the shop's staff and its
+     * customers are different readers, and choosing English in the back office
+     * must not turn the site English for whoever opens it next.
+     */
+    public function localeCookie(): string
+    {
+        return match ($this) {
+            self::Admin => 'locale_admin',
+            self::Frontend => 'locale',
         };
     }
 

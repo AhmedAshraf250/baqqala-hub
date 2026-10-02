@@ -1,6 +1,6 @@
 <?php
 
-use App\Foundation\Localization\LocalePreference;
+use App\Foundation\Area\Area;
 
 /*
  * The admin's user menu, open. The screen-by-screen checks see every page with
@@ -10,7 +10,7 @@ use App\Foundation\Localization\LocalePreference;
 
 test('the open user menu passes axe', function (string $language, string $mode) {
     actingAsAdmin();
-    $this->withCookie(LocalePreference::Cookie, $language);
+    $this->withCookie(Area::Admin->localeCookie(), $language);
 
     $page = visit(route('admin.dashboard', absolute: false));
     $page = $mode === 'dark' ? $page->inDarkMode() : $page->inLightMode();

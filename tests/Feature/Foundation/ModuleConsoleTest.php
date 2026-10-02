@@ -96,6 +96,16 @@ test('about shows the areas and the modules', function () {
         ->toMatch('/Module migrations pending\W+none/');
 });
 
+test('about says whether web requests run with OPcache', function () {
+    // php.ini belongs to the machine, so a new one starts without it — and
+    // every page then takes about three times as long.
+    $expected = extension_loaded('Zend OPcache') && filter_var(ini_get('opcache.enable'), FILTER_VALIDATE_BOOLEAN)
+        ? '/OPcache\W+on for web requests/'
+        : '/OPcache\W+OFF/';
+
+    expect(consoleOutput('about', ['--only' => 'foundation']))->toMatch($expected);
+});
+
 test('about says when the permissions the modules define are not stored', function () {
     // A module enabled without reseeding: its screens would refuse everyone
     // but the unrestricted role, with nothing saying why.

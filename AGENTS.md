@@ -197,18 +197,22 @@ Foundation   how anyone reaches it      →  app/Foundation/
 - **Arrows point down only, with no exemptions.** The foundation never names a
   shell or a module. A shell never names a module — not its classes, not its
   `{key}::` views or strings. `config/` is the only place that names everything.
-- To place a file, ask: *would this survive becoming a school system?* Yes →
-  foundation or shell. No → module.
+- To place a file, ask: *is it about the shop's business — customers, products,
+  debts, sales?* Yes → that business's module. Is it about running the
+  application — signing in, layouts, language, money as a type, permissions as
+  machinery? → foundation (for both areas) or a shell (for one).
 - Each layer has its own provider: `App\Foundation\FoundationServiceProvider`,
   `App\Admin\AdminServiceProvider`, `App\Frontend\FrontendServiceProvider`.
   There is no `app/Providers`, no `App\Models`, no `app/Http`, no `app/Support`.
 - Every interface name ends in `Interface`, and lives in its layer's
   `Contracts/`: `app/Foundation/Contracts/`, `app/{Admin,Frontend}/Contracts/`,
   a module's `Contracts/`.
-- **The foundation and the shells never carry the product's name.** No
-  command, config file or key, translation file or key, helper, cookie, env
-  variable, CSS name, or class uses it — a test fails otherwise. The product's
-  name is a value: `APP_NAME`, and the `shell.brand.name` string.
+- **The product's name is never written into code.** It is a value —
+  `APP_NAME`, and the `shell.brand.name` string — so renaming the shop is
+  changing two values. No command, config file or key, translation key,
+  helper, cookie, env variable, CSS name, or class in the foundation or the
+  shells spells it — a test fails otherwise. Wording about the business in the
+  shell's strings is fine; the name itself is not.
 
 ## Modules
 
@@ -232,7 +236,9 @@ Foundation   how anyone reaches it      →  app/Foundation/
   Requests), `Console/` (its commands), `View/Components/{Admin,Frontend}/`
   (the classes behind its components that need data). Its views are in `Resources/views/{admin,frontend}/` and work as
   views, `<x-{key}::…>` components, and Livewire screens. **Never put a module's table, string, setting, or fixture in a
-  shared file.**
+  shared file.** The one exception is the names of its environment variables:
+  `.env` is one file per installation, so each `env()` a module's
+  `Config/{key}.php` reads is listed in `.env.example` — a test fails otherwise.
 - A module adds to an area only through that area's interfaces:
   `ProvidesAdminNavigationInterface`, `ProvidesPermissionsInterface`,
   `ProvidesAdminSettingsInterface`. A real dependency is declared with
@@ -241,8 +247,9 @@ Foundation   how anyone reaches it      →  app/Foundation/
 - The shell wraps a module's routes in its key: `/admin/{key}/…`,
   `admin.{key}.…`. Every screen route carries `can:{permission}`, the same
   permission its sidebar item names.
-- **Modules stay declarations.** No queries and no file reads while registering
-  or booting — `RenderCostTest` fails otherwise.
+- **Modules stay declarations.** No queries while registering or booting —
+  `RenderCostTest` fails otherwise — and no file reads, which no test can see:
+  keep that one in review.
 
 ## Between modules
 
@@ -300,7 +307,9 @@ Foundation   how anyone reaches it      →  app/Foundation/
   customer's. Admin screens use `admin.password.confirm`, never `password.confirm`.
 - Anything area-specific in a session gets an area-specific key outside
   Laravel's `auth.*` namespace.
-- A signed-in user in the wrong area gets 403, not a redirect.
+- A login signed in to one area is a guest in the other — the other area's
+  guard cannot even see it — and is sent to that area's sign-in screen. Should
+  a login ever reach the wrong guard, the area middleware answers 403.
 - In tests, sign in with `actingAsAdmin()` / `actingAsCustomer()`;
   `actingAs($user)` alone uses the frontend guard.
 
@@ -421,8 +430,9 @@ Foundation   how anyone reaches it      →  app/Foundation/
   module's in its own `module.php`.
 - Direction comes from `text_direction()` / `is_rtl()`; directional
   icons flip, digits stay `dir="ltr"`.
-- The reader's language is `LocalePreference`, in its own cookie — never in the
-  session.
+- The reader's language is `LocalePreference`, kept per area — in the area's
+  own cookie (`Area::localeCookie()`) and on the signed-in login
+  (`users.locale`) — never in the session, and never shared between areas.
 - Settings: each layer's in its own file — `config/foundation.php`,
   `config/admin.php`, `config/frontend.php` — roles in `config/roles.php`, a
   module's in its `Config/{key}.php`. Never call `env()` outside a config file.
@@ -433,8 +443,17 @@ Foundation   how anyone reaches it      →  app/Foundation/
   it.** A new screen joins `adminScreens()` or `customerScreens()` in
   `tests/Pest.php`; the render, accessibility, and browser tests then cover it.
 - `tests/Browser` runs each screen in a real browser — Arabic and English,
-  light and dark, and a 375px phone — through axe. It needs Playwright's
-  Chromium once per machine: `npx playwright install chromium`.
+  light and dark, and a 375px phone — through axe. It needs Playwright and its
+  Chromium once per machine. If a browser test fails with
+  `PlaywrightNotInstalledException`, install them yourself and run it again —
+  `npm install` (Playwright is already in `package.json`), then
+  `npx playwright install chromium` — rather than skipping the browser tests.
+  They read the built assets: run `npm run build` after changing JS or CSS
+  when no `public/hot` file shows a Vite dev server running.
+- **Never run the tests while the configuration is cached** — a cached
+  configuration ignores `phpunit.xml`, and the suite then wipes the real
+  database. `tests/TestCase.php` refuses to start outside the `testing`
+  environment; if it does, run `php artisan optimize:clear` and say so.
 - The feature suite calls `withoutVite()` globally; call `$this->withVite()` in
   any test about what a page loads, or it passes against an empty string.
 - A claim about a module's removal, a boot cost, or route caching is proven on a

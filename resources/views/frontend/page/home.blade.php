@@ -5,6 +5,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ __('shell.page.home.title') }} - {{ __('shell.brand.name') }}</title>
 
@@ -24,7 +25,7 @@
 
             <div class="space-y-3">
                 <h1 class="text-4xl font-semibold tracking-normal">
-                    {{ __('shell.page.home.heading') }}
+                    {{ __('shell.brand.name') }}
                 </h1>
                 <p class="max-w-xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
                     {{ __('shell.page.home.intro') }}
@@ -42,6 +43,8 @@
                     </flux:button>
                 @endif
             </div>
+
+            <x-frontend::ui.locale-switcher />
         </div>
     </main>
 

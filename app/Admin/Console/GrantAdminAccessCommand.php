@@ -8,6 +8,7 @@ use App\Foundation\Identity\Models\AdminUser;
 use App\Foundation\Identity\Models\User;
 use Database\Seeders\AuthorizationSeeder;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 use function Laravel\Prompts\password;
@@ -44,6 +45,9 @@ class GrantAdminAccessCommand extends Command
             required: true,
             validate: static fn (string $value): ?string => filter_var($value, FILTER_VALIDATE_EMAIL) ? null : 'That is not an email address.',
         );
+
+        // Stored lowercased (see User), so looked up lowercased.
+        $email = Str::lower(trim($email));
 
         $existing = User::query()->where('email', $email)->first();
 

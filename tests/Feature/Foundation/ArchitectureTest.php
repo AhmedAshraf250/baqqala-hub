@@ -4,6 +4,7 @@ use App\Admin\Authorization\PermissionRegistry;
 use App\Admin\Contracts\Authorization\ProvidesPermissionsInterface;
 use App\Admin\Contracts\Navigation\ProvidesAdminNavigationInterface;
 use App\Admin\Navigation\AdminNavigation;
+use App\Admin\Navigation\NavigationItem;
 use App\Foundation\Area\Area;
 use App\Foundation\Contracts\Modules\DependsOnModulesInterface;
 use App\Foundation\Modules\ModuleRegistry;
@@ -13,6 +14,7 @@ use App\Modules\Purchases\PurchasesServiceProvider;
 use App\Modules\Sales\SalesServiceProvider;
 use Illuminate\Console\Command;
 use Illuminate\Container\Attributes\Scoped;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -43,7 +45,7 @@ function sourceFilesIn(string $directory, bool $optional = false): array
 
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root)) as $file) {
         if ($file->isFile() && $file->getExtension() === 'php') {
-            $files[] = $file->getPathname();
+            $files[] = posixPath($file->getPathname());
         }
     }
 
@@ -54,7 +56,7 @@ function sourceFilesIn(string $directory, bool $optional = false): array
 
 function relativePath(string $file): string
 {
-    return Str::after($file, base_path().'/');
+    return projectRelativePath($file);
 }
 
 /**
@@ -70,7 +72,7 @@ function moduleRoot(ModuleServiceProvider $module): string
  */
 function classInFile(string $file): string
 {
-    return 'App\\'.str_replace(['/', '.php'], ['\\', ''], Str::after($file, app_path().'/'));
+    return 'App\\'.str_replace(['/', '.php'], ['\\', ''], Str::after(posixPath($file), posixPath(app_path()).'/'));
 }
 
 /*
@@ -132,11 +134,11 @@ test('neither shell names a module', function () {
 });
 
 test('the foundation and the shells never carry the product\'s name', function () {
-    // They are what a school or a clinic starts from. The product's name is a
-    // value it sets — APP_NAME, and the `shell.brand.name` string — never a
-    // command, a setting, a key, a helper, a cookie, a class, or a file name:
-    // a school would otherwise ship `grocery:` commands and a grocery config.
-    // The name in every language it is written in.
+    // The product's name is a value — APP_NAME, and the `shell.brand.name`
+    // string — so renaming the shop is changing two values. Spelled into a
+    // command, a setting, a key, a helper, a cookie, a class, or a file name,
+    // it would be a hunt through the code instead. The name in every language
+    // it is written in.
     $names = array_values(array_unique(array_map(
         fn (string $file) => (string) (require $file)['brand']['name'],
         glob(lang_path('*/shell.php')) ?: [],
@@ -214,6 +216,25 @@ test('a module only reaches into modules it declares', function () {
     }
 
     expect(array_values(array_unique($offenders)))->toBe([]);
+});
+
+test('every event a module publishes waits for the commit', function () {
+    // A listener in another module that ran before the commit could act on a
+    // sale the database then rolled back. Checked by type, so a new event in
+    // any module is held to it the day it is written.
+    $events = array_filter(
+        sourceFilesIn('app/Modules'),
+        static fn (string $file): bool => str_contains($file, '/Contracts/Events/'),
+    );
+
+    expect($events)->not->toBeEmpty();
+
+    $offenders = array_filter(
+        array_map('classInFile', $events),
+        static fn (string $class): bool => ! is_subclass_of($class, ShouldDispatchAfterCommit::class),
+    );
+
+    expect(array_values($offenders))->toBe([]);
 });
 
 test('a module only touches another module\'s Contracts', function () {
@@ -575,9 +596,17 @@ test('no two routes answer the same method and url', function () {
 });
 
 test('a module screen is behind the permission its sidebar item names', function () {
-    // Hiding a menu entry and closing its URL are one statement.
+    // Hiding a menu entry and closing its URL are one statement — for the
+    // items inside a submenu too.
+    $everyItem = static function (array $items) use (&$everyItem): array {
+        return array_merge(...array_map(
+            static fn (NavigationItem $item): array => [$item, ...$everyItem($item->children)],
+            $items,
+        ));
+    };
+
     foreach (app(ModuleRegistry::class)->providing(ProvidesAdminNavigationInterface::class) as $module) {
-        foreach ($module->adminNavigation()->items as $item) {
+        foreach ($everyItem($module->adminNavigation()->items) as $item) {
             if ($item->route === null || $item->permission === null) {
                 continue;
             }
@@ -586,6 +615,60 @@ test('a module screen is behind the permission its sidebar item names', function
                 ->toContain('can:'.$item->permission->value);
         }
     }
+});
+
+test('every routed screen is in the list the render, accessibility, and browser tests run over', function () {
+    // The rule is "every screen has a test that renders it"; the lists in
+    // tests/Pest.php are how. Written by hand, they once named 4 of 14 admin
+    // screens. The sign-in screens have tests of their own, and the area root
+    // only redirects.
+    $ownTests = ['admin.home', 'admin.login', 'admin.two-factor.login', 'admin.password.confirm', 'frontend.home'];
+    $missing = [];
+
+    foreach (Route::getRoutes() as $route) {
+        $name = (string) $route->getName();
+
+        if (! in_array('GET', $route->methods(), true) || $route->parameterNames() !== [] || in_array($name, $ownTests, true)) {
+            continue;
+        }
+
+        $listed = match (true) {
+            str_starts_with($name, 'admin.') => in_array($name, adminScreens(), true),
+            str_starts_with($name, 'frontend.') => in_array($name, customerScreens(), true),
+            default => true,
+        };
+
+        if (! $listed) {
+            $missing[] = $name;
+        }
+    }
+
+    expect($missing)->toBe([]);
+});
+
+test('every admin route a module adds is behind one of its own permissions', function () {
+    // Not only the ones the sidebar links to: a screen reached from a button,
+    // a form's endpoint, an export — each is a URL anyone can type.
+    $offenders = [];
+
+    foreach (app(ModuleRegistry::class)->all() as $key => $module) {
+        foreach (Route::getRoutes() as $route) {
+            if (! str_starts_with((string) $route->getName(), "admin.{$key}.")) {
+                continue;
+            }
+
+            $guards = array_filter(
+                $route->gatherMiddleware(),
+                static fn (mixed $middleware): bool => is_string($middleware) && str_starts_with($middleware, "can:{$key}."),
+            );
+
+            if ($guards === []) {
+                $offenders[] = (string) $route->getName();
+            }
+        }
+    }
+
+    expect($offenders)->toBe([]);
 });
 
 test('no page redirects merely to reach its own default', function () {

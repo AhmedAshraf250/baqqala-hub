@@ -62,6 +62,22 @@ composer run dev        # server, queue, logs and Vite together
 Then sign in at `/admin` as `admin@example.test`, or at `/login` as
 `customer@example.test`. The password for both is `password`.
 
+On a new machine, check PHP itself once — `php.ini` belongs to the machine, so
+nothing in the repository can carry it:
+
+```
+php artisan about --only=foundation   # the OPcache line must say "on"
+php --ini                             # which php.ini to edit, if it does not
+```
+
+In that `php.ini`, remove the `;` from `zend_extension=opcache` and
+`opcache.enable=1`, set `realpath_cache_size=4096k`, and restart
+`composer run dev`. Without it every page recompiles PHP: about 0.5 s instead
+of 0.15 s. Leave `opcache.enable_cli` at 0 — the console gains nothing from it.
+Never run `php artisan optimize` on a development machine: it caches the
+configuration, and the tests then refuse to run (they would otherwise use, and
+wipe, the real database).
+
 The browser tests need Chromium once per machine:
 `npx playwright install chromium`. Before sending anything anywhere:
 

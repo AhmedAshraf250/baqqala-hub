@@ -24,6 +24,18 @@ uses(LazilyRefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(AuthorizationSeeder::class);
+
+    // The caches step reads and clears the compiled views. Pointed at the
+    // working tree's, its answer depended on what the developer last opened,
+    // and its fix deleted what every later test in the run was reading.
+    $this->compiledViews = sys_get_temp_dir().'/compiled-views-'.uniqid();
+    File::ensureDirectoryExists($this->compiledViews);
+    config(['view.compiled' => $this->compiledViews]);
+    app()->forgetInstance('livewire.compiler');
+});
+
+afterEach(function () {
+    File::deleteDirectory($this->compiledViews);
 });
 
 /**
@@ -31,7 +43,10 @@ beforeEach(function () {
  */
 function syncReport(array $parameters = []): string
 {
-    Artisan::call('app:sync', $parameters);
+    // Without it, the question nobody answers reads the console — and on
+    // Windows that switches its code page for the rest of the run, after which
+    // no `⚡` file name resolves.
+    Artisan::call('app:sync', [...$parameters, '--no-interaction' => true]);
 
     return Artisan::output();
 }
@@ -188,13 +203,15 @@ test('compiled views older than a component class are reported', function () {
 });
 
 test('a route cache built before the routes changed is reported', function () {
-    $cache = sys_get_temp_dir().'/routes-cache-'.uniqid().'.php';
+    // Relative to the project, for the reason given in RenderCostTest.
+    $relative = 'storage/framework/routes-cache-'.uniqid().'.php';
+    $cache = base_path($relative);
     file_put_contents($cache, '<?php return [];');
     touch($cache, strtotime('2000-01-01'));
 
     // Laravel decides once, at boot, whether routes are cached, and keeps the
     // answer; the path is read when asked.
-    $_SERVER['APP_ROUTES_CACHE'] = $cache;
+    $_SERVER['APP_ROUTES_CACHE'] = $relative;
     app()->instance('routes.cached', true);
 
     try {

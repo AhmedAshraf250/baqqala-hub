@@ -1,5 +1,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+{{-- This area's own token. Without it, script that posts (passkeys) falls
+     back to the XSRF-TOKEN cookie, which is one cookie for the whole site and
+     holds whichever area's token was issued last. --}}
+<meta name="csrf-token" content="{{ csrf_token() }}" />
 
 <title>
     {{ filled($title ?? null) ? $title.' - '.__('shell.brand.name') : __('shell.brand.name') }}

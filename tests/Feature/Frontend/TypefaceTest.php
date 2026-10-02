@@ -1,6 +1,6 @@
 <?php
 
-use App\Foundation\Localization\LocalePreference;
+use App\Foundation\Area\Area;
 
 /*
  * The frontend's face, Instrument Sans, has no Arabic. Arabic reads in Cairo:
@@ -18,7 +18,7 @@ function builtFrontendStylesheet(): string
 test('an arabic page leads with cairo, and serves it arabic included', function () {
     $this->withVite();
 
-    $html = $this->withCookie(LocalePreference::Cookie, 'ar')
+    $html = $this->withCookie(Area::Frontend->localeCookie(), 'ar')
         ->get(route('frontend.home'))
         ->assertOk()
         ->getContent();

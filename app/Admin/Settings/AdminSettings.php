@@ -2,7 +2,9 @@
 
 namespace App\Admin\Settings;
 
+use App\Admin\Authorization\AdminPermission;
 use App\Admin\Contracts\Settings\ProvidesAdminSettingsInterface;
+use App\Foundation\Area\Area;
 use App\Foundation\Modules\ModuleRegistry;
 use Illuminate\Container\Attributes\Scoped;
 use Illuminate\Support\Collection;
@@ -37,13 +39,28 @@ final class AdminSettings
     {
         return $this->sections ??= collect([
             ...$this->personal(),
-            // A module configures itself here — tax rules, printing, an
-            // integration's credentials — the way it contributes navigation.
-            ...$this->modules
-                ->providing(ProvidesAdminSettingsInterface::class)
-                ->flatMap(static fn (ProvidesAdminSettingsInterface $module): array => $module->adminSettings())
-                ->all(),
+            ...$this->business(),
         ]);
+    }
+
+    /**
+     * The tabs that configure the business rather than the person — tax rules,
+     * printing, an integration's credentials — which a module contributes the
+     * way it contributes navigation. Only someone who may configure the panel
+     * sees them; everyone sees their own.
+     *
+     * @return list<SettingsSection>
+     */
+    private function business(): array
+    {
+        if (Area::Admin->user()?->can(AdminPermission::ManageSettings->value) !== true) {
+            return [];
+        }
+
+        return array_values($this->modules
+            ->providing(ProvidesAdminSettingsInterface::class)
+            ->flatMap(static fn (ProvidesAdminSettingsInterface $module): array => $module->adminSettings())
+            ->all());
     }
 
     /**

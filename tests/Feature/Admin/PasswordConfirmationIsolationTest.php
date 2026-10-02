@@ -27,8 +27,10 @@ test('the admin confirmation screen renders in the admin shell', function () {
 });
 
 test('a customer confirming their password does not unlock an admin screen', function () {
-    // The exact leak this covers: both guards share one session, and Laravel
-    // keeps a single `auth.password_confirmed_at` for all of it.
+    // The leak this covers, from when the areas shared a session: Laravel
+    // keeps a single `auth.password_confirmed_at` for every guard. The areas
+    // now have separate sessions; this suite runs both in one (the array
+    // driver), which is exactly the case the separate key must still cover.
     actingAsAdmin();
     $this->actingAs(FrontendUser::factory()->create(), Area::Frontend->guard());
 

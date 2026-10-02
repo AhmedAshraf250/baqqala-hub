@@ -13,9 +13,9 @@ use App\Admin\Http\Middleware\RequireAdminPasswordConfirmation;
 use App\Foundation\Contracts\Modules\SyncStepInterface;
 use App\Foundation\Contracts\Modules\UninstallStepInterface;
 use App\Foundation\Identity\Models\AdminUser;
+use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 
@@ -30,6 +30,8 @@ final class AdminServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->authorizeUnrestrictedRole();
+
         // The admin shell stores each module's permissions and the roles that
         // hold them: it checks they match the code, and removes a module's
         // when the module is uninstalled. Both happen only in the console.
@@ -45,7 +47,6 @@ final class AdminServiceProvider extends ServiceProvider
         // when there is one, and the template alone when there is not.
         Blade::componentNamespace('App\\Admin\\View\\Components', 'admin');
 
-        $this->authorizeUnrestrictedRole();
         $this->persistMiddlewareThroughLivewire();
 
         if ($this->app->runningInConsole()) {
@@ -60,14 +61,21 @@ final class AdminServiceProvider extends ServiceProvider
      *
      * Returning null — not false — for everyone else is what keeps this a
      * shortcut rather than a verdict: the normal permission check still runs.
+     *
+     * Registered from `register()`, when the Gate is first built, so it is the
+     * first `before` to run. spatie adds its own from its `boot()`, which runs
+     * earlier than this provider's; from there, this shortcut came second and
+     * the owner's every check loaded the permission set first.
      */
     private function authorizeUnrestrictedRole(): void
     {
-        Gate::before(function (mixed $user): ?bool {
-            return $user instanceof AdminUser
-                && $user->hasRole($this->app->make(RoleDefinitions::class)->unrestricted())
-                ? true
-                : null;
+        $this->callAfterResolving(GateContract::class, function (GateContract $gate): void {
+            $gate->before(function (mixed $user): ?bool {
+                return $user instanceof AdminUser
+                    && $user->hasRole($this->app->make(RoleDefinitions::class)->unrestricted())
+                    ? true
+                    : null;
+            });
         });
     }
 

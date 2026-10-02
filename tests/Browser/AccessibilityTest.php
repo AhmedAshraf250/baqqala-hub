@@ -1,7 +1,6 @@
 <?php
 
 use App\Admin\Http\Middleware\RequireAdminPasswordConfirmation;
-use App\Foundation\Localization\LocalePreference;
 
 /*
  * What only a browser sees: contrast, the accessibility tree once scripts have
@@ -18,7 +17,7 @@ dataset('colour modes', ['light', 'dark']);
  */
 function openAs(string $path, string $language, string $mode): mixed
 {
-    test()->withCookie(LocalePreference::Cookie, $language);
+    readingIn($language);
 
     $page = visit($path);
 
@@ -51,7 +50,7 @@ test('a screen fits a 375px phone without scrolling sideways', function (string 
         RequireAdminPasswordConfirmation::SessionKey => time(),
         'auth.password_confirmed_at' => time(),
     ]);
-    $this->withCookie(LocalePreference::Cookie, $language);
+    readingIn($language);
 
     $overflow = visit(route($route, absolute: false))->on()->mobile()
         ->script('() => document.documentElement.scrollWidth - document.documentElement.clientWidth');

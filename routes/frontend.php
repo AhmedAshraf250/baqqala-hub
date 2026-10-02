@@ -5,6 +5,7 @@ use App\Foundation\Modules\ModuleRegistry;
 use App\Foundation\Modules\ModuleServiceProvider;
 use App\Frontend\Http\Controllers\AccountController;
 use App\Frontend\Http\Controllers\HomeController;
+use App\Frontend\Http\Controllers\UpdateLocaleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +22,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', HomeController::class)->name('home');
+
+// Public, because the sign-in screen and the site have a switcher too.
+Route::post('locale', UpdateLocaleController::class)->name('locale.update');
 
 /*
 |--------------------------------------------------------------------------

@@ -6,6 +6,8 @@ use App\Foundation\Identity\Models\FrontendUser;
 use App\Modules\Customers\Contracts\CustomerRepositoryInterface;
 use App\Modules\Customers\Contracts\Data\CustomerData;
 use App\Modules\Customers\Contracts\Events\CustomerAdded;
+use App\Modules\Customers\Database\Models\Customer;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Adds a person to the shop's books.
@@ -29,14 +31,24 @@ final readonly class CreateCustomer
      */
     public function handle(array $attributes, ?FrontendUser $login = null): CustomerData
     {
-        $customer = $this->customers->save(new CustomerData(
-            id: null,
-            name: $attributes['name'],
-            phone: $attributes['phone'] ?? null,
-            address: $attributes['address'] ?? null,
-            notes: $attributes['notes'] ?? null,
-            userId: $login?->getKey(),
-        ));
+        $customer = DB::transaction(function () use ($attributes, $login): CustomerData {
+            $customer = $this->customers->save(new CustomerData(
+                id: null,
+                name: $attributes['name'],
+                phone: $attributes['phone'] ?? null,
+                address: $attributes['address'] ?? null,
+                notes: $attributes['notes'] ?? null,
+            ));
+
+            if ($login === null) {
+                return $customer;
+            }
+
+            // The repository never writes the link; this step owns it.
+            Customer::query()->whereKey($customer->id)->update(['user_id' => $login->getKey()]);
+
+            return $customer->withLogin((int) $login->getKey());
+        });
 
         CustomerAdded::dispatch($customer);
 

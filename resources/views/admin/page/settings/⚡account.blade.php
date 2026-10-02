@@ -70,7 +70,7 @@ new class extends Component {
 
         $user->save();
 
-        LocalePreference::store($validated['locale']);
+        LocalePreference::remember(Area::Admin, $validated['locale']);
 
         session()->flash('success', __('shell.settings.account_saved'));
 
