@@ -1,6 +1,5 @@
 <?php
 
-use App\Admin\Http\Controllers\PlannedSectionController;
 use App\Modules\Accounts\Authorization\AccountPermission;
 use Illuminate\Support\Facades\Route;
 
@@ -15,7 +14,20 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', PlannedSectionController::class)
-    ->defaults('description', 'accounts::module.planned.accounts')
+// The counter's workspace: every customer, where each account stands, and
+// the drawer that records what was taken and what was paid.
+Route::livewire('/', 'accounts::admin.page.customers')
     ->middleware('can:'.AccountPermission::View->value)
     ->name('index');
+
+// The day's book: every entry of a business day, and the cash each person took.
+Route::livewire('journal', 'accounts::admin.page.journal')
+    ->middleware('can:'.AccountPermission::View->value)
+    ->name('journal');
+
+// One customer's account: where it stands, its statement, and the
+// corrections made from it.
+Route::livewire('{customer}', 'accounts::admin.page.account')
+    ->whereNumber('customer')
+    ->middleware('can:'.AccountPermission::View->value)
+    ->name('show');

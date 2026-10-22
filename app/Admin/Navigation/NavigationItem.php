@@ -4,6 +4,7 @@ namespace App\Admin\Navigation;
 
 use App\Admin\Contracts\Authorization\PermissionInterface;
 use App\Foundation\Area\Area;
+use Illuminate\Support\Str;
 
 /**
  * One node in the admin navigation tree.
@@ -19,7 +20,9 @@ final readonly class NavigationItem
      * @param  string  $label  A translation key, resolved at render time.
      * @param  string|null  $route  A named route, or null for a branch that only groups.
      * @param  string  $icon  A Bootstrap Icons name, without the `bi-` prefix.
-     * @param  list<string>  $activeWhen  Route-name patterns that light this item up.
+     * @param  list<string>  $activeWhen  Route-name patterns that light this item up — the
+     *                                    screens reached from it, such as one customer's page
+     *                                    from the list, which then sit under it in the trail.
      * @param  list<self>  $children  Nested items, rendered as an AdminLTE treeview.
      * @param  PermissionInterface|null  $permission  What a administrator needs to see this.
      */
@@ -129,6 +132,13 @@ final readonly class NavigationItem
             if ($trail !== []) {
                 return [$this, ...$trail];
             }
+        }
+
+        // A screen reached from this one — a customer's page from the list —
+        // is named in `activeWhen`: it sits under this item, so the trail to
+        // it ends here and the screen adds its own name after.
+        if ($this->route !== null && $this->activeWhen !== [] && Str::is($this->activeWhen, $routeName)) {
+            return [$this];
         }
 
         return [];

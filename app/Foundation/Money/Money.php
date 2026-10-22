@@ -2,6 +2,7 @@
 
 namespace App\Foundation\Money;
 
+use App\Foundation\Text\Numerals;
 use InvalidArgumentException;
 use JsonSerializable;
 use Stringable;
@@ -37,11 +38,13 @@ final readonly class Money implements JsonSerializable, Stringable
     /**
      * Build from a human-entered decimal amount such as "125.50".
      *
-     * Parsing is string-based so the value never passes through a float.
+     * Parsing is string-based so the value never passes through a float. An
+     * amount typed on an Arabic keyboard — «١٢٥٫٥٠» — reads the same as its
+     * Latin form.
      */
     public static function fromDecimalString(string $amount): self
     {
-        $amount = trim($amount);
+        $amount = trim(Numerals::toLatin($amount));
 
         if (! preg_match('/^(?<sign>[+-]?)(?<whole>\d+)(?:\.(?<fraction>\d+))?$/', $amount, $matches)) {
             throw new InvalidArgumentException("Cannot read [{$amount}] as a monetary amount.");
@@ -111,11 +114,30 @@ final readonly class Money implements JsonSerializable, Stringable
     }
 
     /**
-     * The amount with its currency symbol, for display.
+     * The amount for a reader: thousands grouped, for example "48,350.00".
+     *
+     * Grouped on the string, never through number_format(), which would take
+     * the amount through a float. Not for input fields or storage — those use
+     * {@see toDecimalString()}, which {@see fromDecimalString()} reads back.
+     */
+    public function toDisplayString(): string
+    {
+        $decimal = $this->toDecimalString();
+        $sign = str_starts_with($decimal, '-') ? '-' : '';
+        [$whole, $fraction] = array_pad(explode('.', ltrim($decimal, '-'), 2), 2, null);
+
+        $grouped = strrev(implode(',', str_split(strrev($whole), 3)));
+
+        return $sign.$grouped.($fraction === null ? '' : '.'.$fraction);
+    }
+
+    /**
+     * The amount with its currency symbol in the reader's language, for
+     * display.
      */
     public function format(): string
     {
-        return trim($this->toDecimalString().' '.config('foundation.currency.symbol'));
+        return trim($this->toDisplayString().' '.currency_symbol());
     }
 
     public function jsonSerialize(): string

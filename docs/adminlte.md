@@ -249,9 +249,19 @@ than inlining the markup.
 | Money output | `<x-admin::ui.money>` |
 | Empty states | `<x-admin::ui.empty-state>` |
 | `.table-responsive` + `.table` | `<x-admin::table.table>` + `.heading` / `.empty-row` / `.row-actions` |
+| `.pagination` under a Livewire list | `$rows->links('admin::table.pagination')` — never Livewire's own Bootstrap view, whose summary is untranslated and whose grey fails contrast |
 | Form controls + validation state | `<x-admin::form.input\|money\|select\|textarea\|checkbox>` |
+| `.info-box` stat that narrows a list | `<x-admin::ui.stat>` — a button with `wire:click`, a link with `href`, `pressed` while its narrowing is in force; `soft` for a step on a scale, so only its far end is solid. Four to a row on a wide screen, two (`col-6`) on a phone |
+| A list's groups and filters | one `.filter-bar` panel above the list; a select whose value narrows it carries `.is-filtering`, and a clear-the-filters button shows while anything does. On a phone the groups are one `.filter-chips` row that scrolls sideways, and the selects fold behind a `.filter-toggle` that counts what is on |
+| A list on a phone | `.table-cards` on `<x-admin::table.table>`, with each cell placed: `.cell-check`, `.cell-main`, `.cell-figure`, `.cell-actions` — below 768px each row is a card, its buttons across the bottom |
+| Something needed from every screen | a module's overlay (`ProvidesAdminOverlaysInterface`); a `.fab` for its button, in the thumb's corner, with the page keeping room under it |
+| A settings row: icon, name, help, control | `<x-admin::ui.setting-row>` |
+| A select too long to scroll | `<x-admin::form.search-select>` — the real `<select>` stays hidden in the form |
+| A confirmation before deleting or archiving | `data-confirm` on the control; the shell's `admin::layout.confirm-dialog` asks |
+| `fieldset` round a group of choices | plain `<fieldset>` with a `<legend class="form-label">` — the theme removes the box AdminLTE draws round every fieldset; utilities add one back where a group should stand out |
 | Sidebar tree with headers and badges | `<x-admin::layout.sidebar.item>`, driven by `AdminNavigation` |
 | `.app-content-header` + breadcrumb | `<x-admin::layout.content-header>` |
+| `.timeline` grouped by day | written in place on the change log, `admin::page.audit`, its one user — a component the day a second screen needs it |
 
 Most of these are templates alone: everything they show arrives as
 attributes. The pieces that read the navigation tree, the signed-in

@@ -6,12 +6,15 @@ use App\Foundation\Money\Money;
 use App\Foundation\Money\MoneyCast;
 use App\Modules\Accounts\Contracts\Data\AccountStanding;
 use App\Modules\Accounts\Contracts\Enums\TransactionType;
+use App\Modules\Accounts\Contracts\Exceptions\AccountChangedMeanwhile;
 use App\Modules\Accounts\Database\Factories\CustomerAccountFactory;
 use App\Modules\Accounts\Domain\Actions\PostAccountTransaction;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -19,7 +22,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * `outstanding` is what the customer owes — a cached total of the account's
  * ledger, only ever written by {@see PostAccountTransaction}, and therefore
- * deliberately absent from the fillable list.
+ * deliberately absent from the fillable list. So is the rest of the summary
+ * beside it — the latest entry, the latest payment, since when the balance
+ * has been owed — written in the same transaction and checked against the
+ * ledger by `app:sync`.
  *
  * @property int $id
  * @property int $customer_id Whose account this is. Deliberately a plain id and
@@ -31,6 +37,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *                            not fetch them one at a time.
  * @property Money $outstanding
  * @property Money $credit_limit
+ * @property int|null $last_entry_id
+ * @property CarbonImmutable|null $last_entry_at
+ * @property CarbonImmutable|null $last_payment_at
+ * @property CarbonImmutable|null $in_debt_since
  */
 #[UseFactory(CustomerAccountFactory::class)]
 #[Fillable(['customer_id', 'credit_limit'])]
@@ -105,6 +115,34 @@ class CustomerAccount extends Model
     }
 
     /**
+     * The latest entry, from the summary kept beside the balance.
+     *
+     * @return BelongsTo<AccountTransaction, $this>
+     */
+    public function lastEntry(): BelongsTo
+    {
+        return $this->belongsTo(AccountTransaction::class, 'last_entry_id');
+    }
+
+    /**
+     * Refuse when someone posted since the person looked at the account.
+     *
+     * Called on the locked row, inside the posting transaction, so the check
+     * and the write cannot be separated by another posting. Null skips it,
+     * for a caller that decided nothing from the balance.
+     *
+     * @throws AccountChangedMeanwhile
+     */
+    public function assertUnchangedSince(?int $expectedLastEntryId): void
+    {
+        if ($expectedLastEntryId === null || $expectedLastEntryId === $this->last_entry_id) {
+            return;
+        }
+
+        throw new AccountChangedMeanwhile($this->customer_id, $expectedLastEntryId, $this->last_entry_id, $this->outstanding);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -114,6 +152,10 @@ class CustomerAccount extends Model
         return [
             'outstanding' => MoneyCast::class,
             'credit_limit' => MoneyCast::class,
+            'last_entry_id' => 'integer',
+            'last_entry_at' => 'immutable_datetime',
+            'last_payment_at' => 'immutable_datetime',
+            'in_debt_since' => 'immutable_datetime',
         ];
     }
 }

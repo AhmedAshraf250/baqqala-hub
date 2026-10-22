@@ -3,6 +3,7 @@
 namespace App\Foundation;
 
 use App\Foundation\Area\Area;
+use App\Foundation\Audit\RemoveModuleAuditEntries;
 use App\Foundation\Console\AboutFoundation;
 use App\Foundation\Console\Modules\ListModulesCommand;
 use App\Foundation\Console\Modules\ShowModuleCommand;
@@ -10,6 +11,7 @@ use App\Foundation\Console\Modules\UninstallModuleCommand;
 use App\Foundation\Console\SyncCommand;
 use App\Foundation\Contracts\Modules\DependsOnModulesInterface;
 use App\Foundation\Contracts\Modules\SyncStepInterface;
+use App\Foundation\Contracts\Modules\UninstallStepInterface;
 use App\Foundation\Modules\ModuleRegistry;
 use App\Foundation\Modules\ModuleServiceProvider;
 use App\Foundation\Modules\Sync\SyncCaches;
@@ -40,9 +42,11 @@ final class FoundationServiceProvider extends ServiceProvider
     {
         $this->registerModules();
 
-        // What the foundation itself stores, for `app:sync`.
+        // What the foundation itself stores, for `app:sync`; and what it
+        // keeps for every module — the change log — for uninstalling one.
         if ($this->app->runningInConsole()) {
             $this->app->tag([SyncMigrations::class, SyncCaches::class], SyncStepInterface::class);
+            $this->app->tag([RemoveModuleAuditEntries::class], UninstallStepInterface::class);
         }
     }
 

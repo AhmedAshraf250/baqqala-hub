@@ -37,6 +37,11 @@ interface SyncStepInterface
     /**
      * Bring what it stores in line with the code — for the given module
      * only, when one is given.
+     *
+     * When it cannot, it throws, with a message that says what stopped it and
+     * what a person can do about it: `app:sync` shows that message under the
+     * step and goes on to the next one, rather than reporting a fix that did
+     * nothing.
      */
     public function fix(?ModuleServiceProvider $module = null): void;
 }

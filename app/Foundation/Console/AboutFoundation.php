@@ -7,6 +7,7 @@ use App\Foundation\Identity\Models\User;
 use App\Foundation\Modules\ModuleInspector;
 use App\Foundation\Modules\ModuleServiceProvider;
 use App\Foundation\Modules\ModuleState;
+use App\Foundation\Time\LocalClock;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -25,6 +26,7 @@ final readonly class AboutFoundation
     public function __construct(
         private Config $config,
         private ModuleInspector $modules,
+        private LocalClock $clock,
     ) {}
 
     /**
@@ -36,6 +38,7 @@ final readonly class AboutFoundation
             'Version' => (string) $this->config->get('foundation.version'),
             'Languages' => $this->languages(),
             'Currency' => sprintf('%s, %d decimal places', $this->config->get('foundation.currency.code'), $this->config->get('foundation.currency.precision')),
+            'Local time' => $this->localTime(),
             'OPcache' => $this->opcache(),
             ...$this->areas(),
             ...$this->modulesAtAGlance(),
@@ -58,6 +61,24 @@ final readonly class AboutFoundation
         return filter_var(ini_get('opcache.enable'), FILTER_VALIDATE_BOOLEAN)
             ? 'on for web requests'
             : '<fg=yellow;options=bold>OFF</> — set `opcache.enable=1` in php.ini (see README)';
+    }
+
+    /**
+     * The zone stored moments are shown in and when the business day starts,
+     * as the owner set them in the panel — or as configured, before the
+     * settings table exists.
+     */
+    private function localTime(): string
+    {
+        $timezone = (string) $this->config->get('foundation.time.timezone');
+        $dayStartsAt = (string) $this->config->get('foundation.time.day_starts_at');
+
+        if (Schema::hasTable('settings')) {
+            $timezone = $this->clock->timezone();
+            $dayStartsAt = $this->clock->dayStartsAt();
+        }
+
+        return "{$timezone} · the day starts at {$dayStartsAt} · stored in UTC";
     }
 
     private function languages(): string

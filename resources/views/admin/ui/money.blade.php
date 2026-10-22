@@ -19,6 +19,6 @@
     };
 @endphp
 
-<span {{ $attributes->class(['font-monospace', 'text-nowrap', $variant]) }} dir="ltr">
+<span {{ $attributes->class(['num', 'text-nowrap', $variant]) }} dir="ltr">
     {{ $amount->format() }}
 </span>

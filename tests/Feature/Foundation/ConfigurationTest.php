@@ -7,7 +7,8 @@ test('the foundation and the admin area expose their defaults', function () {
     expect(config('foundation.locales.supported.ar.direction'))->toBe('rtl')
         ->and(config('foundation.locales.supported.en.direction'))->toBe('ltr')
         ->and(config('foundation.currency.precision'))->toBe(2)
-        ->and(config('admin.theme_storage_key'))->toBeString();
+        ->and(config('admin.theme_storage_key'))->toBeString()
+        ->and(config('admin.shortcuts_storage_key'))->toBeString();
 });
 
 test('the configured default locale is one the application supports', function () {

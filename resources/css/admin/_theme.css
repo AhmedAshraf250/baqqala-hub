@@ -27,10 +27,36 @@
 
 /* ---- Component surface ------------------------------------------------- */
 
-/* Digits stay LTR inside RTL text (standard Unicode bidi), so monospace
-   figures in tables line up on the decimal point. */
-.font-monospace {
-    font-variant-numeric: tabular-nums;
+/* Figures — amounts, phones, references — in the page's own face, with every
+   digit the same width, so a column lines up on its last digit. Use `.num`,
+   never Bootstrap's `.font-monospace`: its typewriter face beside Cairo is
+   the clash this replaces. Digits stay left to right inside Arabic, by
+   Unicode's own rule. */
+.num {
+    font-family: var(--bs-body-font-family);
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: 0;
+}
+
+/* A screen stacked with `.d-grid` keeps to the width it is given. A grid's
+   column otherwise grows to the widest line in it that cannot wrap — a long
+   name in a figure cut short with an ellipsis — and the whole page then
+   scrolls sideways on a phone. */
+.d-grid {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* A group of choices is one field among the others, its legend its label —
+   not the box AdminLTE draws round every fieldset. A fieldset that should
+   stand out says so with utilities. */
+fieldset {
+    padding: 0;
+    margin-bottom: 0;
+    border: 0;
+}
+
+fieldset legend {
+    padding: 0;
 }
 
 .empty-state-icon {
@@ -91,4 +117,1808 @@
    stretching across the whole bar. */
 .global-search {
     max-width: 32rem;
+}
+
+/* A figure worth seeing first: AdminLTE's info-box; when it narrows the
+   screen, a button that lifts under the pointer and is outlined while its
+   narrowing is in force. */
+.stat-box {
+    height: 100%;
+    margin-bottom: 0;
+    border: 1px solid transparent;
+    text-align: start;
+    text-decoration: none;
+}
+
+.stat-box-action {
+    font: inherit;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.stat-box-action:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--bs-box-shadow);
+}
+
+.stat-box-action:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+.stat-box.is-pressed {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stat-box-action {
+        transition: none;
+    }
+
+    .stat-box-action:hover {
+        transform: none;
+    }
+}
+
+/* On a phone the tiles sit two to a row, so the figures are all in view
+   before the list: the icon shrinks to a badge, and a long name wraps
+   rather than being cut. */
+@media (max-width: 575.98px) {
+    .stat-box {
+        min-height: 0;
+    }
+
+    .stat-box .info-box-icon {
+        align-self: flex-start;
+        width: 2.25rem;
+        height: 2.25rem;
+        font-size: 1.125rem;
+    }
+
+    .stat-box .info-box-content {
+        padding-inline: 0.5rem 0;
+        line-height: 1.5;
+    }
+
+    .stat-box .info-box-text {
+        white-space: normal;
+    }
+}
+
+/* ---- Tones ------------------------------------------------------------- */
+
+/* Eight colour pairs a person picks from to tell their own labels apart, each
+   a background and a text colour that stay above 4.5:1 in both modes. Named
+   by colour, never by what is labelled, so any screen may use them. */
+:root,
+[data-bs-theme='light'] {
+    --tone-blue-bg: #e4edff;   --tone-blue-fg: #1e40af;
+    --tone-green-bg: #e3f6ea;  --tone-green-fg: #166534;
+    --tone-amber-bg: #fdf0d2;  --tone-amber-fg: #854d0e;
+    --tone-red-bg: #fde4e2;    --tone-red-fg: #9f1d14;
+    --tone-purple-bg: #efe7fd; --tone-purple-fg: #5b21b6;
+    --tone-teal-bg: #dcf3f1;   --tone-teal-fg: #115e59;
+    --tone-pink-bg: #fce7f1;   --tone-pink-fg: #9d174d;
+    --tone-gray-bg: #eceef1;   --tone-gray-fg: #374151;
+}
+
+[data-bs-theme='dark'] {
+    --tone-blue-bg: #1c2b4a;   --tone-blue-fg: #a9c4ff;
+    --tone-green-bg: #15301f;  --tone-green-fg: #86d6a2;
+    --tone-amber-bg: #3a2c0c;  --tone-amber-fg: #f2c66b;
+    --tone-red-bg: #3b1513;    --tone-red-fg: #f4a39b;
+    --tone-purple-bg: #2b1d45; --tone-purple-fg: #c9b3f7;
+    --tone-teal-bg: #10302e;   --tone-teal-fg: #7fd5cc;
+    --tone-pink-bg: #3a1427;   --tone-pink-fg: #f2a7c8;
+    --tone-gray-bg: #262b33;   --tone-gray-fg: #c3c9d2;
+}
+
+.tone-blue   { --tone-bg: var(--tone-blue-bg);   --tone-fg: var(--tone-blue-fg); }
+.tone-green  { --tone-bg: var(--tone-green-bg);  --tone-fg: var(--tone-green-fg); }
+.tone-amber  { --tone-bg: var(--tone-amber-bg);  --tone-fg: var(--tone-amber-fg); }
+.tone-red    { --tone-bg: var(--tone-red-bg);    --tone-fg: var(--tone-red-fg); }
+.tone-purple { --tone-bg: var(--tone-purple-bg); --tone-fg: var(--tone-purple-fg); }
+.tone-teal   { --tone-bg: var(--tone-teal-bg);   --tone-fg: var(--tone-teal-fg); }
+.tone-pink   { --tone-bg: var(--tone-pink-bg);   --tone-fg: var(--tone-pink-fg); }
+.tone-gray   { --tone-bg: var(--tone-gray-bg);   --tone-fg: var(--tone-gray-fg); }
+
+/* A label: a quiet pill in the page's own colours, its tone only a dot — so
+   a page of them reads as text, not as a box of crayons. */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 50rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    padding: 0.125rem 0.625rem;
+}
+
+/* Its colours weigh nothing, so a chip that is a button takes the button's —
+   and fills when chosen. */
+:where(.chip) {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    border: 1px solid var(--bs-border-color-translucent);
+}
+
+.chip-dot {
+    flex: 0 0 auto;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: var(--tone-fg, var(--bs-secondary-color));
+}
+
+.btn.chip {
+    --bs-btn-padding-y: 0.25rem;
+    --bs-btn-padding-x: 0.75rem;
+    --bs-btn-font-size: 0.8125rem;
+    --bs-btn-font-weight: 500;
+    --bs-btn-border-radius: 50rem;
+    --bs-btn-bg: var(--bs-body-bg);
+    --bs-btn-color: var(--bs-body-color);
+    --bs-btn-border-color: var(--bs-border-color);
+    --bs-btn-hover-bg: var(--bs-tertiary-bg);
+    --bs-btn-hover-color: var(--bs-body-color);
+    --bs-btn-hover-border-color: var(--bs-border-color);
+    --bs-btn-active-bg: var(--bs-tertiary-bg);
+    --bs-btn-active-color: var(--bs-body-color);
+    --bs-btn-active-border-color: var(--bs-border-color);
+}
+
+/* The chosen one: filled with the accent, and a tick beside its name, so the
+   choice shows from across the room and is not told by colour alone. */
+.btn.chip[aria-pressed='true'],
+.btn-check:checked + .btn.chip {
+    --bs-btn-bg: var(--bs-primary);
+    --bs-btn-color: var(--bs-white);
+    --bs-btn-border-color: var(--bs-primary);
+    --bs-btn-hover-bg: var(--bs-primary);
+    --bs-btn-hover-color: var(--bs-white);
+    --bs-btn-hover-border-color: var(--bs-primary);
+    --bs-btn-active-bg: var(--bs-primary);
+    --bs-btn-active-color: var(--bs-white);
+    --bs-btn-active-border-color: var(--bs-primary);
+    font-weight: 600;
+}
+
+.btn.chip[aria-pressed='true'] .chip-count,
+.btn-check:checked + .btn.chip .chip-count {
+    opacity: 1;
+}
+
+.btn.chip .chip-tick {
+    display: none;
+}
+
+.btn.chip[aria-pressed='true'] .chip-tick,
+.btn-check:checked + .btn.chip .chip-tick {
+    display: inline;
+}
+
+.btn.chip[aria-pressed='true'] .chip-dot,
+.btn-check:checked + .btn.chip .chip-dot {
+    display: none;
+}
+
+/* ---- Money's two directions -------------------------------------------- */
+
+/* What raises a balance is red — «أخذ», «عليه» — and what lowers it is green
+   — «دفع», «له»: debit and credit, the two directions every ledger has. The
+   word always says it as well; the colour lets the eye find it first. Each
+   set is Bootstrap's own pair for the mode, so text on it passes 4.5:1. */
+.flow-debit {
+    --flow-fg: var(--bs-danger-text-emphasis);
+    --flow-bg: var(--bs-danger-bg-subtle);
+    --flow-border: var(--bs-danger-border-subtle);
+    --flow-solid: var(--bs-danger);
+}
+
+.flow-credit {
+    --flow-fg: var(--bs-success-text-emphasis);
+    --flow-bg: var(--bs-success-bg-subtle);
+    --flow-border: var(--bs-success-border-subtle);
+    --flow-solid: var(--bs-success);
+}
+
+.flow-text {
+    color: var(--flow-fg);
+}
+
+/* A button for one direction: its soft pair at rest, filled under the pointer
+   and when chosen. */
+.btn-flow {
+    --bs-btn-color: var(--flow-fg);
+    --bs-btn-bg: var(--flow-bg);
+    --bs-btn-border-color: var(--flow-border);
+    --bs-btn-hover-color: var(--bs-white);
+    --bs-btn-hover-bg: var(--flow-solid);
+    --bs-btn-hover-border-color: var(--flow-solid);
+    --bs-btn-active-color: var(--bs-white);
+    --bs-btn-active-bg: var(--flow-solid);
+    --bs-btn-active-border-color: var(--flow-solid);
+    --bs-btn-disabled-color: var(--flow-fg);
+    --bs-btn-disabled-bg: var(--flow-bg);
+    --bs-btn-disabled-border-color: var(--flow-border);
+}
+
+/* A filled button for one direction — the drawer's save. */
+.btn-flow-solid {
+    --bs-btn-color: var(--bs-white);
+    --bs-btn-bg: var(--flow-solid);
+    --bs-btn-border-color: var(--flow-solid);
+    --bs-btn-hover-color: var(--bs-white);
+    --bs-btn-hover-bg: color-mix(in srgb, var(--flow-solid) 85%, black);
+    --bs-btn-hover-border-color: color-mix(in srgb, var(--flow-solid) 85%, black);
+    --bs-btn-active-color: var(--bs-white);
+    --bs-btn-active-bg: color-mix(in srgb, var(--flow-solid) 80%, black);
+    --bs-btn-active-border-color: color-mix(in srgb, var(--flow-solid) 80%, black);
+    --bs-btn-disabled-color: var(--bs-white);
+    --bs-btn-disabled-bg: var(--flow-solid);
+    --bs-btn-disabled-border-color: var(--flow-solid);
+}
+
+/* A row of a statement or a journal in its direction's colour: faint at rest,
+   fuller under the pointer or the keyboard, so the eye runs down the takes and
+   the payments without reading each one. */
+tr.flow-debit > *,
+tr.flow-credit > * {
+    --bs-table-bg: color-mix(in srgb, var(--flow-bg) 38%, transparent);
+    transition: background-color 0.15s;
+}
+
+tr.flow-debit:hover > *,
+tr.flow-credit:hover > *,
+tr.flow-debit:focus-visible > *,
+tr.flow-credit:focus-visible > * {
+    --bs-table-bg: color-mix(in srgb, var(--flow-bg) 75%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    tr.flow-debit > *,
+    tr.flow-credit > * {
+        transition: none;
+    }
+}
+
+/* ---- Buttons ----------------------------------------------------------- */
+
+/* Bootstrap's grey outline button is 4.3:1 on a light card and below 3:1 on
+   a dark one; its text takes the body colour instead. */
+.btn-outline-secondary {
+    --bs-btn-color: var(--bs-body-color);
+}
+
+/* The trail tells a link from where you are at a glance: a step you can go
+   back to is the link blue, underlined lightly until the pointer is on it;
+   the screen you are on is plain grey. Bootstrap's hover blue is the one
+   that keeps 4.5:1 on the page's grey, in each mode. */
+.breadcrumb {
+    --bs-breadcrumb-divider-color: var(--bs-tertiary-color);
+    --bs-breadcrumb-item-active-color: var(--bs-secondary-color);
+}
+
+.breadcrumb a {
+    color: var(--bs-link-hover-color);
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: rgba(var(--bs-link-hover-color-rgb), 0.35);
+    text-underline-offset: 0.25em;
+}
+
+.breadcrumb a:hover,
+.breadcrumb a:focus-visible {
+    text-decoration-color: currentColor;
+}
+
+/* The home step is an icon; a line under a glyph reads as a smudge. */
+.breadcrumb-item:first-child a {
+    text-decoration: none;
+}
+
+/* Its red outline falls below 4:1 on the dark page; the emphasis red is
+   Bootstrap's pair for each mode. */
+.btn-outline-danger {
+    --bs-btn-color: var(--bs-danger-text-emphasis);
+}
+
+/* Its link blue is 4.26:1 on the page's grey; a button drawn as a link takes
+   the emphasis blue Bootstrap pairs with each mode. */
+.btn-link {
+    --bs-btn-color: var(--bs-primary-text-emphasis);
+    --bs-btn-hover-color: var(--bs-primary-text-emphasis);
+    --bs-btn-active-color: var(--bs-primary-text-emphasis);
+}
+
+/* Bootstrap's blue outline is 4.26:1 on the page's grey; the emphasis blue
+   passes in both modes. Filled, when chosen, it is the plain accent. */
+.btn-outline-primary {
+    --bs-btn-color: var(--bs-primary-text-emphasis);
+}
+
+.chip-count {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+}
+
+/* A table that scrolls inside its container keeps everything in it: a
+   visually hidden header label is absolutely positioned, and without this
+   its containing block is the card around the table — where, in a right-to-
+   left table wider than a phone, it stands off the page's edge and the whole
+   page scrolls sideways. */
+.table-responsive {
+    position: relative;
+}
+
+/* Text a person typed is set in its own direction (`dir="auto"`) but lined
+   up with the page: an Arabic name in an English column starts where the
+   column starts, beside everything else in it. Fields keep their own. */
+[dir='auto']:not(input, textarea, select) {
+    text-align: -webkit-match-parent;
+    text-align: match-parent;
+}
+
+/* A section's name in the sidebar sits on a faint rule that runs to the edge,
+   so the sections read as groups at a glance. */
+.sidebar-menu .nav-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.sidebar-menu .nav-header::before,
+.sidebar-menu .nav-header::after {
+    content: '';
+    height: 1px;
+    background-color: currentColor;
+    opacity: 0.3;
+}
+
+.sidebar-menu .nav-header::before {
+    flex: 0 0 0.5rem;
+}
+
+.sidebar-menu .nav-header::after {
+    flex: 1 1 auto;
+}
+
+/* Lets a flex item shrink below its content, so a long name wraps or
+   truncates instead of widening its row. Bootstrap has no such utility. */
+.min-w-0 {
+    min-width: 0;
+}
+
+/* ---- Fields ------------------------------------------------------------ */
+
+/* A field's edge is what says it is a field. Bootstrap's border is 1.3:1 on
+   white, so selects, boxes, and ticks faded into the page; a field takes a
+   firmer grey, and a box to tick one that clears 3:1 in both modes. */
+:root,
+[data-bs-theme='light'] {
+    --field-border: #adb5bd;
+    --tick-border: #6c757d;
+}
+
+[data-bs-theme='dark'] {
+    --field-border: #6c757d;
+    --tick-border: #adb5bd;
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+    border-color: var(--field-border);
+}
+
+.form-check-input {
+    border-color: var(--tick-border);
+}
+
+/* What shapes a list — its groups and its filters — sits together in one
+   quiet panel above it, so it reads as the list's controls and not as more
+   of the page. A filter in force is filled with the accent, so it is plain
+   what the list is narrowed by. */
+.filter-bar {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg);
+    background-color: var(--bs-tertiary-bg);
+}
+
+.filter-bar .form-label {
+    font-weight: 600;
+    color: var(--bs-emphasis-color);
+}
+
+.filter-bar-rule {
+    margin: 0;
+    border-top: 1px dashed var(--bs-border-color);
+    opacity: 1;
+}
+
+.form-select.is-filtering {
+    border-color: var(--bs-primary);
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+    font-weight: 600;
+}
+
+/* ---- Lists worked from the keyboard ------------------------------------ */
+
+/* A row that arrow keys move between shows where it is. */
+[data-row]:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: -2px;
+}
+
+/* A list being redrawn dims where it is, rather than jumping. */
+.is-refreshing {
+    opacity: 0.55;
+    transition: opacity 0.15s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .is-refreshing {
+        transition: none;
+    }
+}
+
+.kbd-hints kbd {
+    font-size: 0.75rem;
+}
+
+/* Keys named beside buttons, gone when this browser turned shortcuts off. */
+[data-shortcuts='off'] .kbd-hint {
+    display: none !important;
+}
+
+/* ---- Drawers ----------------------------------------------------------- */
+
+/* Behind a drawer or a dialog the page stays in view, softened and blurred,
+   so it is plain where the person is and what they will come back to. */
+.offcanvas-backdrop,
+.modal-backdrop {
+    background-color: rgb(15 23 42 / 0.35);
+    backdrop-filter: blur(3px);
+}
+
+.offcanvas-backdrop.show,
+.modal-backdrop.show {
+    opacity: 1;
+}
+
+[data-bs-theme='dark'] .offcanvas-backdrop,
+[data-bs-theme='dark'] .modal-backdrop {
+    background-color: rgb(0 0 0 / 0.5);
+}
+
+/* The question asked before anything is deleted or archived: narrow,
+   centred, its tone in a round icon above the words. */
+.confirm-dialog {
+    max-width: 24rem;
+}
+
+.confirm-dialog-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    font-size: 1.5rem;
+}
+
+.confirm-dialog-icon-danger {
+    background-color: var(--bs-danger-bg-subtle);
+    color: var(--bs-danger-text-emphasis);
+}
+
+.confirm-dialog-icon-warning {
+    background-color: var(--bs-warning-bg-subtle);
+    color: var(--bs-warning-text-emphasis);
+}
+
+/* A drawer with room for a form and its lines; the whole screen on a phone. */
+.offcanvas-wide {
+    --bs-offcanvas-width: min(36rem, 100vw);
+}
+
+.border-dashed {
+    border-style: dashed !important;
+}
+
+/* Fields sized to the figures they hold, not to the line. */
+.entry-amount,
+.entry-quantity,
+.entry-price {
+    flex: 0 0 auto;
+    width: 9rem;
+}
+
+.entry-quantity {
+    width: 11rem;
+}
+
+/* The drawer: who it is for, what is chosen, the lines, and the figures. */
+.entry-customer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--bs-border-color-translucent);
+    border-radius: var(--bs-border-radius-lg);
+    background-color: var(--bs-tertiary-bg);
+}
+
+/* Its head says what is being recorded, on its direction's pale colour —
+   «أخذ على الحساب» on the pale red, a payment on the pale green — so it is
+   never in doubt which drawer is open. */
+.entry-header {
+    border-bottom: 1px solid var(--flow-border);
+    background-color: var(--flow-bg);
+}
+
+.entry-header .offcanvas-title {
+    font-weight: 700;
+    color: var(--flow-fg);
+}
+
+.entry-title-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: var(--flow-solid);
+    color: var(--bs-white);
+    font-size: 1rem;
+}
+
+/* The drawer's steps — what to add, the lines, the note — are named in the
+   page's strong text with their icon; the aids between them, the usual
+   products and the shelves, stay small and grey. */
+.entry-label {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--bs-emphasis-color);
+}
+
+.entry-label > .bi {
+    color: var(--bs-secondary-color);
+}
+
+.entry-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--bs-secondary-color);
+}
+
+/* Suggestions and shelves in one row that scrolls sideways, rather than a
+   wall of buttons pushing the lines down. */
+.entry-strip {
+    display: flex;
+    gap: 0.375rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+}
+
+.entry-strip > .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* Each line its own numbered card, edged on its start side in the entry's
+   colour: what it is and what it comes to on top, how much at what price
+   below. Every line keeps its total in the same place and its figure's
+   field at the row's end, so a long charge reads down two straight
+   columns; the line being typed in is outlined. */
+.entry-lines {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.entry-line {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: start;
+    padding: 0.625rem 0.5rem;
+    border: 1px solid var(--bs-border-color);
+    border-inline-start: 3px solid var(--flow-border);
+    border-radius: var(--bs-border-radius-lg);
+    background-color: var(--bs-body-bg);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.entry-line:focus-within {
+    border-color: var(--bs-primary-border-subtle);
+    border-inline-start-color: var(--flow-solid);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.12);
+}
+
+.entry-line-number {
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.entry-line-body {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.entry-line-total {
+    min-width: 5.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: end;
+    white-space: nowrap;
+}
+
+.entry-line-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.entry-line-money {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-inline-start: auto;
+}
+
+.entry-line-times,
+.entry-line-money-label {
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color);
+}
+
+/* Taking a line out is red, on its pale tint, filled under the pointer. */
+.entry-line-remove {
+    --bs-btn-color: var(--bs-danger-text-emphasis);
+    --bs-btn-bg: var(--bs-danger-bg-subtle);
+    --bs-btn-border-color: var(--bs-danger-border-subtle);
+    --bs-btn-hover-color: var(--bs-white);
+    --bs-btn-hover-bg: var(--bs-danger);
+    --bs-btn-hover-border-color: var(--bs-danger);
+    --bs-btn-active-color: var(--bs-white);
+    --bs-btn-active-bg: var(--bs-danger);
+    --bs-btn-active-border-color: var(--bs-danger);
+    padding: 0.125rem 0.375rem;
+    line-height: 1.2;
+}
+
+/* The figures a save is about, pinned to the drawer's bottom edge however far
+   it scrolls: solid, with a shadow above it, so the lines pass cleanly under
+   it — and the drawer scrolls the field being typed in clear of it. */
+.entry-form {
+    scroll-padding-bottom: 11rem;
+}
+
+.entry-summary {
+    position: sticky;
+    bottom: calc(-1 * var(--bs-offcanvas-padding-y));
+    z-index: 2;
+    display: grid;
+    gap: 0.5rem;
+    margin-inline: calc(-1 * var(--bs-offcanvas-padding-x));
+    margin-bottom: calc(-1 * var(--bs-offcanvas-padding-y));
+    padding: 0.75rem var(--bs-offcanvas-padding-x);
+    border-top: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+    box-shadow: 0 -0.5rem 1rem -0.75rem rgb(0 0 0 / 0.3);
+}
+
+.entry-summary-total,
+.entry-summary-paid {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.entry-summary-figure {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--flow-fg);
+}
+
+.entry-summary-change {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--bs-border-radius);
+    background-color: var(--bs-tertiary-bg);
+}
+
+.entry-summary-arrow {
+    font-size: 1.25rem;
+    color: var(--bs-secondary-color);
+}
+
+/* The choice between two kinds of entry: two quiet buttons, the chosen one
+   filled with the accent and marked with a tick. */
+.entry-kind .chip-tick {
+    display: none;
+}
+
+.btn-check:checked + .entry-kind .chip-tick {
+    display: inline;
+}
+
+/* ---- Balances ---------------------------------------------------------- */
+
+/* «عليه 1,250.00»: the word lighter, the figure bolder, both in the colour
+   of the balance's direction — red owing, green owed — and settled quiet. */
+.balance-word {
+    color: var(--bs-secondary-color);
+}
+
+.balance-figure {
+    font-weight: 600;
+    color: var(--bs-emphasis-color);
+}
+
+.balance.flow-debit .balance-word,
+.balance.flow-debit .balance-figure,
+.balance.flow-credit .balance-word,
+.balance.flow-credit .balance-figure {
+    color: var(--flow-fg);
+}
+
+.balance-lg .balance-word {
+    font-size: 1.125rem;
+}
+
+.balance-lg .balance-figure {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+/* ---- Statements -------------------------------------------------------- */
+
+/* A short list of figures, name on one side and value on the other. */
+.account-facts > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-block: 0.4rem;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+.account-facts dt {
+    font-weight: 400;
+    color: var(--bs-secondary-color);
+}
+
+.account-facts dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: end;
+}
+
+/* The figures a statement opens with, in a row that wraps. */
+.statement-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    margin-bottom: 0;
+}
+
+.statement-strip > div {
+    display: flex;
+    gap: 0.375rem;
+}
+
+.statement-strip dt {
+    font-weight: 400;
+    color: var(--bs-secondary-color);
+}
+
+.statement-strip dd {
+    margin: 0;
+}
+
+/* A day's heading row: its name, and where the account stood at its end. */
+.statement .statement-day > th {
+    background-color: var(--bs-tertiary-bg);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.statement-icon {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+}
+
+.flow-debit .statement-icon,
+.flow-credit .statement-icon {
+    background-color: var(--flow-bg);
+    color: var(--flow-fg);
+}
+
+.flow-debit .statement-amount,
+.flow-credit .statement-amount {
+    color: var(--flow-fg);
+    font-weight: 600;
+}
+
+.statement-title {
+    --bs-btn-color: var(--bs-emphasis-color);
+    --bs-btn-hover-color: var(--bs-primary-text-emphasis);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.statement-detail {
+    max-width: 44ch;
+}
+
+/* A voided entry stays where it was, struck through — and says so in words
+   beside it. */
+.statement-voided .statement-title,
+.statement-voided .statement-amount {
+    text-decoration: line-through;
+}
+
+.statement-undone > td,
+.statement-reversal > td {
+    color: var(--bs-secondary-color);
+}
+
+/* ---- Settings ---------------------------------------------------------- */
+
+/* One setting a row: its icon, its name and what it changes, its control at
+   the end. Rows are ruled apart, so a pane reads as a list of decisions. */
+.setting-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 18rem);
+    gap: 0.75rem 1rem;
+    align-items: center;
+    padding-block: 1rem;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+.setting-row:last-child {
+    border-bottom: 0;
+}
+
+.setting-row-wide {
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 26rem);
+}
+
+.setting-row-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+    font-size: 1.125rem;
+}
+
+.setting-row:has(.setting-switch) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.setting-switch .form-check-input {
+    width: 2.75rem;
+    height: 1.5rem;
+    margin: 0;
+}
+
+/* On a phone a field drops under its name; a switch stays beside it. */
+@media (max-width: 767.98px) {
+    .setting-row:not(:has(.setting-switch)) {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .setting-row:not(:has(.setting-switch)) .setting-row-control {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---- Quick search ------------------------------------------------------ */
+
+/* The field shows only what was typed: the dialog has its own close. */
+.search-palette-dialog input[type='search']::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* The header's way in looks like a field and opens the search dialog. */
+.global-search-trigger {
+    cursor: pointer;
+    background-color: var(--bs-tertiary-bg);
+}
+
+.search-palette-dialog {
+    margin-top: 8vh;
+}
+
+.search-palette-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.search-palette-hint {
+    margin: 0;
+    padding: 0.75rem 1rem 0;
+    font-size: 0.8125rem;
+    color: var(--bs-secondary-color);
+}
+
+.search-palette-heading {
+    margin: 0;
+    padding: 0.75rem 1rem 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--bs-secondary-color);
+}
+
+.search-palette-list {
+    margin: 0;
+    padding: 0 0.5rem 0.5rem;
+    list-style: none;
+}
+
+/* A result: lit under the pointer and the keyboard, its keys at its end. */
+.search-palette-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-inline-end: 0.5rem;
+    border-radius: var(--bs-border-radius-lg);
+}
+
+.search-palette-item:hover,
+.search-palette-item:focus-within {
+    background-color: var(--bs-tertiary-bg);
+}
+
+.search-palette-link {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--bs-border-radius-lg);
+    color: inherit;
+    text-decoration: none;
+}
+
+.search-palette-link:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: -2px;
+}
+
+.search-palette-icon {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+}
+
+.search-palette-badge {
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.search-palette-actions {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 0.25rem;
+}
+
+/* ---- Change log -------------------------------------------------------- */
+
+/* AdminLTE's timeline, a change a card; each field a line of «was → is». */
+.audit-timeline .timeline-header {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.audit-changes {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.audit-from {
+    color: var(--bs-secondary-color);
+}
+
+/* ---- Trash ------------------------------------------------------------- */
+
+/* One deleted thing a row: its kind as a quiet tile, what it was and when it
+   went, and the two ways out at the row's end — wrapping under it on a
+   phone. */
+.trash-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.trash-item-icon {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.625rem;
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+}
+
+.trash-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-inline-start: auto;
+}
+
+/* ---- Search selects ---------------------------------------------------- */
+
+/* A select with a search box in it: the toggle looks like any select, and
+   the list opens under it, above whatever drawer or dialog holds it. */
+.search-select {
+    position: relative;
+}
+
+.search-select-toggle {
+    text-align: start;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-select-panel {
+    position: absolute;
+    inset-inline: 0;
+    top: calc(100% + 0.25rem);
+    z-index: 1060;
+    min-width: 16rem;
+    padding: 0.5rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg);
+    background-color: var(--bs-body-bg);
+    box-shadow: var(--bs-box-shadow);
+}
+
+.search-select-options {
+    max-height: 16rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.search-select-options [role='option'] {
+    padding: 0.375rem 0.625rem;
+    border-radius: var(--bs-border-radius);
+    cursor: pointer;
+}
+
+.search-select-options [role='option']:hover,
+.search-select-options [role='option'].active {
+    background-color: var(--bs-tertiary-bg);
+}
+
+.search-select-options [role='option'][aria-selected='true'] {
+    font-weight: 600;
+    color: var(--bs-primary-text-emphasis);
+}
+
+/* ---- Catalog ----------------------------------------------------------- */
+
+/* A list's status line keeps its height whether it counts or reports, so the
+   rows under it do not jump when a price is saved. */
+.list-status {
+    min-height: 2.5rem;
+}
+
+/* A price changed where it stands: a quiet button that reads as the figure,
+   and in its place, a field just wide enough for one. */
+.price-button {
+    min-width: 5.5rem;
+    text-align: end;
+}
+
+.price-edit {
+    width: 11rem;
+    text-align: start;
+}
+
+/* Looking at the archive is unmistakable: a banner in the warning's soft
+   colours above the list, and its products' names a shade quieter. */
+.archive-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--bs-warning-border-subtle);
+    border-radius: var(--bs-border-radius-lg);
+    background-color: var(--bs-warning-bg-subtle);
+    color: var(--bs-warning-text-emphasis);
+}
+
+.archive-banner-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: var(--bs-body-bg);
+    font-size: 1.25rem;
+}
+
+.archive-banner .btn-outline-secondary {
+    --bs-btn-color: var(--bs-warning-text-emphasis);
+    --bs-btn-border-color: var(--bs-warning-border-subtle);
+}
+
+.product-archived .fw-semibold {
+    color: var(--bs-secondary-color);
+}
+
+/* A shelf's card: its tile in its own soft colour, lifted a little under the
+   pointer or the keyboard; the shelves under it listed below a dashed rule. */
+.category-card {
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.category-card:hover,
+.category-card:focus-visible,
+.category-card:focus-within {
+    transform: translateY(-2px);
+    box-shadow: var(--bs-box-shadow);
+}
+
+.category-tile {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.875rem;
+    font-size: 1.375rem;
+    background-color: var(--tone-bg);
+    color: var(--tone-fg);
+}
+
+.category-archived .category-tile {
+    opacity: 0.55;
+}
+
+.category-below-list {
+    display: grid;
+    gap: 0.375rem;
+    margin: 0.5rem 0 0;
+    padding: 0.5rem 0 0;
+    border-top: 1px dashed var(--bs-border-color);
+    list-style: none;
+}
+
+.category-below-list > li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .category-card {
+        transition: none;
+    }
+
+    .category-card:hover,
+    .category-card:focus-visible,
+    .category-card:focus-within {
+        transform: none;
+    }
+}
+
+/* The icons a shelf may carry: square buttons in a grid that wraps. */
+.icon-choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(2.75rem, 1fr));
+    gap: 0.375rem;
+}
+
+.icon-choices .icon-choice {
+    --bs-btn-active-color: var(--bs-white);
+    --bs-btn-active-bg: var(--bs-primary);
+    --bs-btn-active-border-color: var(--bs-primary);
+    display: inline-grid;
+    place-items: center;
+    min-height: 2.75rem;
+    padding: 0.25rem;
+    font-size: 1.125rem;
+}
+
+.icon-choices .icon-choice:first-of-type {
+    grid-column: span 2;
+}
+
+/* ---- Reports ----------------------------------------------------------- */
+
+/* A report's head: the period on one side, print on the other; the period
+   as it reads just under it. */
+.report-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.report-range {
+    margin: 0;
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+}
+
+/* The reports' index: a card a report, its tile in a soft tone, lifted a
+   little under the pointer or the keyboard. */
+.report-card {
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.report-card:hover,
+.report-card:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: var(--bs-box-shadow);
+    border-color: var(--bs-primary-border-subtle);
+}
+
+.report-card:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+.report-card-icon {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.875rem;
+    font-size: 1.375rem;
+    background-color: var(--tone-bg);
+    color: var(--tone-fg);
+}
+
+.report-card-figure {
+    overflow: hidden;
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* A thin bar under a figure, as long as the figure is beside the largest in
+   its table — in the figure's own direction, or the page's primary. The
+   figure is always written as well; the bar is only for the eye. */
+.report-bar {
+    display: block;
+    width: 100%;
+    height: 0.375rem;
+    border: 0;
+    border-radius: 50rem;
+    overflow: hidden;
+    appearance: none;
+    background-color: var(--bs-secondary-bg);
+    color: var(--flow-solid, var(--bs-primary));
+}
+
+.report-bar::-webkit-progress-bar {
+    border-radius: 50rem;
+    background-color: var(--bs-secondary-bg);
+}
+
+.report-bar::-webkit-progress-value {
+    border-radius: 50rem;
+    background-color: var(--flow-solid, var(--bs-primary));
+}
+
+.report-bar::-moz-progress-bar {
+    border-radius: 50rem;
+    background-color: var(--flow-solid, var(--bs-primary));
+}
+
+.report-bar-cell {
+    min-width: 8rem;
+}
+
+.report-bar-cell .report-bar {
+    margin-top: 0.375rem;
+}
+
+/* A place in a ranking, small and quiet before the name. */
+.report-rank {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    margin-inline-end: 0.5rem;
+    border-radius: 50%;
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .report-card {
+        transition: none;
+    }
+
+    .report-card:hover,
+    .report-card:focus-visible {
+        transform: none;
+    }
+}
+
+/* ---- Phones ------------------------------------------------------------ */
+
+/* The filter panel's toggle on a phone: the width of the panel, its words
+   at the start and its chevron at the end. */
+.filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+@media (max-width: 767.98px) {
+    /* A list's rows become cards: what it is on top, its figure at the end,
+       its buttons across the bottom — nothing to scroll sideways. Each cell
+       says where it goes: `.cell-check`, `.cell-main`, `.cell-figure`,
+       `.cell-actions`; a cell hidden at this width stays hidden. */
+    .table.table-cards > thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .table.table-cards > tbody > tr {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas:
+            'check main figure'
+            'check actions actions';
+        align-items: center;
+        gap: 0.625rem 0.75rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .table.table-cards > tbody > tr > td {
+        display: block;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .table.table-cards .cell-check {
+        grid-area: check;
+        align-self: start;
+        padding-top: 0.25rem;
+    }
+
+    .table.table-cards .cell-main {
+        grid-area: main;
+    }
+
+    .table.table-cards .cell-figure {
+        grid-area: figure;
+        align-self: start;
+        text-align: end;
+    }
+
+    .table.table-cards .cell-actions {
+        grid-area: actions;
+    }
+
+    .table.table-cards .cell-actions > * {
+        display: flex !important;
+        width: 100%;
+    }
+
+    .table.table-cards .cell-actions .btn {
+        flex: 1 1 0;
+        justify-content: center;
+    }
+
+    /* Groups in one row that scrolls sideways, reaching the panel's edges,
+       rather than a wall of chips above the list. */
+    .filter-chips {
+        flex-wrap: nowrap !important;
+        margin-inline: -1rem;
+        padding-inline: 1rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .filter-chips > * {
+        flex: 0 0 auto;
+    }
+}
+
+@media (max-width: 575.98px) {
+    /* Two tiles a row: what each counts and its figure, without the line
+       under it, so the row stays even and the list starts sooner. */
+    .stat-caption {
+        display: none;
+    }
+
+    .app-content-header h3 {
+        font-size: 1.375rem;
+    }
+}
+
+/* ---- Quick notes ------------------------------------------------------- */
+
+/* A floating button for what is needed from any screen, in the corner the
+   thumb reaches. The page keeps room under it, so it never sits on the last
+   row of a list. */
+.fab {
+    position: fixed;
+    inset-inline-end: 1rem;
+    bottom: 1rem;
+    z-index: 1030;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.125rem;
+    border-radius: 50rem;
+    box-shadow: var(--bs-box-shadow);
+    font-weight: 600;
+}
+
+.fab > .bi {
+    font-size: 1.25rem;
+}
+
+body:has(.fab) .app-content {
+    padding-bottom: 5rem;
+}
+
+.capture-dialog {
+    max-width: 32rem;
+}
+
+/* The microphone is offered only where the browser may use one — a secure
+   page with a recorder — which resources/js/admin/modules/voice-recorder.js
+   marks on the page. While it records, the button is filled and breathes. */
+.voice-recorder {
+    display: none;
+}
+
+html[data-voice='on'] .voice-recorder {
+    display: block;
+}
+
+.voice-recorder-or {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.voice-recorder-or::before,
+.voice-recorder-or::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--bs-border-color);
+}
+
+[data-voice-recorder] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+[data-voice-recorder].is-recording {
+    --bs-btn-color: var(--bs-white);
+    --bs-btn-bg: var(--bs-danger);
+    --bs-btn-border-color: var(--bs-danger);
+    --bs-btn-hover-color: var(--bs-white);
+    --bs-btn-hover-bg: var(--bs-danger);
+    animation: voice-breathe 1.2s ease-in-out infinite;
+}
+
+/* While it records, a bar that moves with the voice: grey while nothing is
+   heard, green once the microphone hears someone — so a silent microphone is
+   seen before the note is lost, not after. */
+.voice-level {
+    position: relative;
+    display: block;
+    height: 0.375rem;
+    margin-top: 0.5rem;
+    overflow: hidden;
+    border-radius: 50rem;
+    background-color: var(--bs-secondary-bg);
+}
+
+.voice-level::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--bs-secondary-color);
+    transform: scaleX(var(--voice-level, 0));
+    transform-origin: left;
+    transition: transform 0.08s linear;
+}
+
+[dir='rtl'] .voice-level::after {
+    transform-origin: right;
+}
+
+.voice-level.is-hearing::after {
+    background-color: var(--bs-success);
+}
+
+.toast-voice {
+    width: 100%;
+    height: 2.25rem;
+}
+
+@keyframes voice-breathe {
+    50% {
+        box-shadow: 0 0 0 0.375rem rgba(var(--bs-danger-rgb), 0.25);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-voice-recorder].is-recording {
+        animation: none;
+    }
+}
+
+/* A note waiting to be posted: a card edged in its direction's colour, what
+   was jotted large enough to read at a glance, and what to do with it in one
+   row under it. */
+.note-card {
+    display: grid;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-inline-start: 4px solid var(--flow-solid);
+    border-radius: var(--bs-border-radius-lg);
+    background-color: var(--bs-body-bg);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+
+.note-card-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.note-card-kind {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.125rem 0.625rem;
+    border-radius: 50rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    background-color: var(--flow-bg);
+    color: var(--flow-fg);
+}
+
+.note-card-text {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.note-card-voice {
+    width: 100%;
+    max-width: 24rem;
+    height: 2.5rem;
+}
+
+.note-card-actions,
+.note-card-matches {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.note-card-find {
+    padding: 0.75rem;
+    border-radius: var(--bs-border-radius);
+    background-color: var(--bs-tertiary-bg);
+}
+
+.note-card-matches {
+    margin-top: 0.5rem;
+}
+
+/* ---- Printing ---------------------------------------------------------- */
+
+.print-only {
+    display: none;
+}
+
+@media print {
+    .app-header,
+    .app-sidebar,
+    .app-footer,
+    .app-content-header .breadcrumb,
+    .offcanvas-backdrop,
+    .modal-backdrop,
+    .toast-container,
+    .no-print {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block !important;
+    }
+
+    .app-wrapper,
+    .app-main {
+        display: block !important;
+    }
+
+    .card {
+        box-shadow: none !important;
+        border: 0 !important;
+    }
+
+    /* A receipt: only the open drawer marked as one. */
+    body.printing-receipt * {
+        visibility: hidden;
+    }
+
+    body.printing-receipt .offcanvas.show .receipt,
+    body.printing-receipt .offcanvas.show .receipt * {
+        visibility: visible;
+    }
+
+    body.printing-receipt .offcanvas.show {
+        position: absolute;
+        inset: 0;
+        width: auto;
+        transform: none;
+        border: 0;
+    }
+}
+
+/* ---- Search pickers ---------------------------------------------------- */
+
+/* The results under a search box, drawn by search-picker.js. */
+.picker {
+    position: relative;
+}
+
+.picker-results {
+    position: absolute;
+    inset-inline: 0;
+    top: calc(100% + 0.25rem);
+    z-index: 1060;
+    max-height: 22rem;
+    overflow-y: auto;
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    box-shadow: var(--bs-box-shadow);
+}
+
+.picker-option {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 0.75rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+}
+
+.picker-option + .picker-option {
+    border-top: 1px solid var(--bs-border-color-translucent);
+}
+
+.picker-label {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.picker-detail {
+    grid-column: 1;
+    font-size: 0.8125rem;
+    color: var(--bs-secondary-color);
+}
+
+.picker-aside {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    font-variant-numeric: tabular-nums lining-nums;
+}
+
+.picker-option.active {
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+}
+
+.picker-option.active .picker-detail {
+    color: inherit;
+}
+
+.picker-option-submit .picker-label {
+    color: var(--bs-success-text-emphasis);
+}
+
+.picker-option-submit.active .picker-label {
+    color: inherit;
+}
+
+.picker-filter {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    background-color: var(--bs-tertiary-bg);
+    border-bottom: 1px solid var(--bs-border-color);
 }

@@ -2,6 +2,7 @@
 
 use App\Admin\Authorization\AdminPermission;
 use App\Admin\Http\Controllers\DashboardController;
+use App\Admin\Http\Controllers\ManifestController;
 use App\Admin\Http\Controllers\PlannedSectionController;
 use App\Admin\Http\Controllers\SettingsController;
 use App\Foundation\Area\Area;
@@ -26,6 +27,9 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/admin/dashboard')->name('home');
 
 Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+// What a phone needs to add the panel to its home screen.
+Route::get('manifest.webmanifest', ManifestController::class)->name('manifest');
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +63,16 @@ app(ModuleRegistry::class)->all()->each(static function (ModuleServiceProvider $
 */
 
 Route::get('settings', SettingsController::class)->name('settings');
+
+// Who changed what, and when — everything but money, which the ledger keeps.
+Route::livewire('audit', 'admin::page.audit')
+    ->middleware('can:'.AdminPermission::ViewAuditTrail->value)
+    ->name('audit');
+
+// What was deleted, kept to be brought back until it is let go of for good.
+Route::livewire('trash', 'admin::page.trash')
+    ->middleware('can:'.AdminPermission::ManageTrash->value)
+    ->name('trash');
 
 Route::livewire('profile', 'admin::page.profile')->name('profile');
 

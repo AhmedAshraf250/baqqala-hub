@@ -9,8 +9,11 @@ use App\Foundation\Area\Area;
 use App\Foundation\Contracts\Modules\DependsOnModulesInterface;
 use App\Foundation\Modules\ModuleRegistry;
 use App\Foundation\Modules\ModuleServiceProvider;
+use App\Modules\Accounts\AccountsServiceProvider;
 use App\Modules\Catalog\CatalogServiceProvider;
+use App\Modules\Notebook\NotebookServiceProvider;
 use App\Modules\Purchases\PurchasesServiceProvider;
+use App\Modules\Reports\ReportsServiceProvider;
 use App\Modules\Sales\SalesServiceProvider;
 use Illuminate\Console\Command;
 use Illuminate\Container\Attributes\Scoped;
@@ -268,6 +271,22 @@ test('a module only touches another module\'s Contracts', function () {
     expect(array_values(array_unique($offenders)))->toBe([]);
 });
 
+test('the reports only read', function () {
+    // Reports is the one module that reads other modules' tables directly — a
+    // report sums across them in one query — so it never writes: not a row,
+    // not a balance, not a setting.
+    $writes = '/->(insert\w*|upsert|update\w*|delete|forceDelete|truncate|increment|decrement|save|put)\(|DB::(statement|unprepared|insert|update|delete)\(/';
+    $offenders = [];
+
+    foreach (sourceFilesIn('app/Modules/Reports') as $file) {
+        if (preg_match($writes, (string) file_get_contents($file)) === 1) {
+            $offenders[] = relativePath($file);
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});
+
 test('a module\'s Contracts never lead back into its private folders', function () {
     // A DTO that knew how to build itself from the model would put the model
     // in the published surface. The model builds the DTO instead.
@@ -375,7 +394,7 @@ test('what a module publishes lives for one request, and nothing outlives it', f
 test('a repository only fetches, saves, and deletes', function () {
     // The convention the name carries: `{Entity}RepositoryInterface` is a
     // module's data, stored and fetched, with no rule in it. Anything with
-    // rules of its own — the ledger's `post()` — is a service, and says so in
+    // rules of its own — the ledger's `charge()` — is a service, and says so in
     // its name.
     foreach (app(ModuleRegistry::class)->all() as $module) {
         foreach (sourceFilesIn(moduleRoot($module).'/Contracts', optional: true) as $file) {
@@ -620,9 +639,9 @@ test('a module screen is behind the permission its sidebar item names', function
 test('every routed screen is in the list the render, accessibility, and browser tests run over', function () {
     // The rule is "every screen has a test that renders it"; the lists in
     // tests/Pest.php are how. Written by hand, they once named 4 of 14 admin
-    // screens. The sign-in screens have tests of their own, and the area root
-    // only redirects.
-    $ownTests = ['admin.home', 'admin.login', 'admin.two-factor.login', 'admin.password.confirm', 'frontend.home'];
+    // screens. The sign-in screens have tests of their own, the area root
+    // only redirects, and the install manifest is not a screen.
+    $ownTests = ['admin.home', 'admin.manifest', 'admin.login', 'admin.two-factor.login', 'admin.password.confirm', 'frontend.home'];
     $missing = [];
 
     foreach (Route::getRoutes() as $route) {
@@ -726,9 +745,10 @@ test('every sidebar heading and item has a translation', function () {
 */
 
 test('disabling a module stops everything it registers', function () {
-    // Catalog leaves with the modules that need it — Purchases and Sales
-    // declare it, and the application refuses to boot without it otherwise.
-    $leaving = [CatalogServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class];
+    // Catalog leaves with the modules that need it — Accounts, Purchases,
+    // Sales, and Reports declare it, and the notebook needs Accounts — and
+    // the application refuses to boot without it otherwise.
+    $leaving = [CatalogServiceProvider::class, AccountsServiceProvider::class, NotebookServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class, ReportsServiceProvider::class];
     $without = array_values(array_diff(config('modules.enabled'), $leaving));
 
     $app = applicationWithModules($without);
@@ -750,7 +770,7 @@ test('disabling a module stops everything it registers', function () {
         ->and(collect($app['migrator']->paths())->filter(fn (string $path) => str_contains($path, '/Modules/Catalog/')))->toBeEmpty();
 
     // And the rest of the product is still there.
-    expect($routes)->toContain('admin.customers.index')
+    expect($routes)->toContain('admin.suppliers.index')
         ->and($permissions)->toContain('customers.view');
 });
 

@@ -95,7 +95,7 @@ new #[Layout('admin::layout.app')] class extends Component {
                         <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>
                         {{ __('shell.settings.member_since') }}
                     </span>
-                    <span class="fw-semibold">{{ $this->administrator->created_at?->isoFormat('LL') }}</span>
+                    <span class="fw-semibold">{{ local_time($this->administrator->created_at)?->isoFormat('LL') }}</span>
                 </li>
             </ul>
         </x-admin::ui.card>

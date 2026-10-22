@@ -3,6 +3,7 @@
 namespace App\Modules\Catalog\Database\Factories;
 
 use App\Foundation\Money\Money;
+use App\Modules\Catalog\Contracts\Enums\SaleUnit;
 use App\Modules\Catalog\Database\Models\Category;
 use App\Modules\Catalog\Database\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -27,18 +28,39 @@ class ProductFactory extends Factory
         return [
             'category_id' => Category::factory(),
             'name' => $name,
+            'unit' => SaleUnit::Piece,
+            'search_terms' => null,
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('#####'),
             'sku' => config('catalog.sku_prefix').'-'.fake()->unique()->numerify('#####'),
+            'barcode' => null,
             'description' => fake()->sentence(),
             'price' => Money::fromMinorUnits(fake()->numberBetween(500, 50000)),
             'cost_price' => Money::fromMinorUnits(fake()->numberBetween(300, 40000)),
             'stock_quantity' => fake()->numberBetween(0, 100),
-            'attributes' => [
-                'unit' => fake()->randomElement(['piece', 'kg', 'pack']),
-            ],
+            'attributes' => null,
             'image' => null,
             'is_active' => true,
         ];
+    }
+
+    /**
+     * A product sold by weight — loose rice, white cheese.
+     */
+    public function byWeight(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'unit' => SaleUnit::Kilogram,
+        ]);
+    }
+
+    /**
+     * A product at the given decimal price per unit.
+     */
+    public function priced(string $price): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'price' => Money::fromDecimalString($price),
+        ]);
     }
 
     public function inactive(): static

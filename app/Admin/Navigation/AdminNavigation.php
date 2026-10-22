@@ -154,6 +154,18 @@ final class AdminNavigation
                 ],
             ),
             new NavigationItem(
+                label: 'shell.navigation.audit',
+                route: 'admin.audit',
+                icon: 'clock-history',
+                permission: AdminPermission::ViewAuditTrail,
+            ),
+            new NavigationItem(
+                label: 'shell.navigation.trash',
+                route: 'admin.trash',
+                icon: 'trash3',
+                permission: AdminPermission::ManageTrash,
+            ),
+            new NavigationItem(
                 label: 'shell.navigation.settings',
                 route: 'admin.settings',
                 icon: 'gear',

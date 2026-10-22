@@ -30,7 +30,29 @@ test('a fraction longer than the currency precision is truncated, not rounded th
 
 test('an unreadable amount is rejected', function (string $amount) {
     expect(fn () => Money::fromDecimalString($amount))->toThrow(InvalidArgumentException::class);
-})->with(['', 'abc', '1.2.3', '١٢٫٥']);
+})->with(['', 'abc', '1.2.3', '1,250.00', '١٢٫٥٫٣']);
+
+test('an amount typed on an Arabic keyboard reads as its Latin form', function (string $typed, string $read) {
+    // Typed with Arabic-Indic digits and the Arabic decimal separator, the way
+    // a cashier on an Arabic layout writes it — once refused outright.
+    expect(Money::fromDecimalString($typed)->toDecimalString())->toBe($read);
+})->with([
+    'Arabic-Indic' => ['٣٥٠', '350.00'],
+    'with the Arabic decimal separator' => ['١٢٫٥', '12.50'],
+    'eastern forms' => ['۳۵۰٫۷۵', '350.75'],
+    'mixed with Latin' => ['3٥0.5', '350.50'],
+]);
+
+test('a displayed amount groups its thousands', function (string $amount, string $shown) {
+    expect(Money::fromDecimalString($amount)->toDisplayString())->toBe($shown);
+})->with([
+    ['0.00', '0.00'],
+    ['999.99', '999.99'],
+    ['1000.00', '1,000.00'],
+    ['48350.00', '48,350.00'],
+    ['1234567.89', '1,234,567.89'],
+    ['-48350.50', '-48,350.50'],
+]);
 
 test('comparisons read the way the ledger needs them', function () {
     $ten = Money::fromDecimalString('10.00');
@@ -43,8 +65,30 @@ test('comparisons read the way the ledger needs them', function () {
         ->and($ten->equals(Money::fromMinorUnits(1000)))->toBeTrue();
 });
 
-test('formatting appends the configured currency symbol', function () {
-    config()->set('foundation.currency.symbol', 'ج.م');
+test('formatting appends the currency as the reader\'s language writes it', function () {
+    config()->set('foundation.currency.symbol', ['ar' => 'ج.م', 'en' => 'EGP']);
 
-    expect(Money::fromDecimalString('25.50')->format())->toBe('25.50 ج.م');
+    app()->setLocale('ar');
+    expect(Money::fromDecimalString('25.50')->format())->toBe('25.50 ج.م')
+        ->and(Money::fromDecimalString('48350.00')->format())->toBe('48,350.00 ج.م');
+
+    app()->setLocale('en');
+    expect(Money::fromDecimalString('25.50')->format())->toBe('25.50 EGP');
+});
+
+test('a language with no symbol of its own shows the currency\'s code', function () {
+    config()->set('foundation.currency.symbol', ['ar' => 'ج.م']);
+    config()->set('foundation.currency.code', 'EGP');
+
+    expect(currency_symbol('ar'))->toBe('ج.م')
+        ->and(currency_symbol('fr'))->toBe('EGP');
+});
+
+test('a displayed amount is never what an input reads back', function () {
+    // Inputs are filled with toDecimalString(); the grouped form is for
+    // reading only, and parsing it is refused rather than misread.
+    $amount = Money::fromDecimalString('1250.00');
+
+    expect(Money::fromDecimalString($amount->toDecimalString())->equals($amount))->toBeTrue()
+        ->and(fn () => Money::fromDecimalString($amount->toDisplayString()))->toThrow(InvalidArgumentException::class);
 });

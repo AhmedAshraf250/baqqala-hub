@@ -3,17 +3,18 @@
 namespace App\Modules\Customers;
 
 use App\Admin\Contracts\Authorization\ProvidesPermissionsInterface;
-use App\Admin\Contracts\Navigation\ProvidesAdminNavigationInterface;
-use App\Admin\Navigation\NavigationItem;
-use App\Admin\Navigation\NavigationSection;
 use App\Foundation\Contracts\Modules\UninstallableInterface;
 use App\Foundation\Identity\Models\FrontendUser;
 use App\Foundation\Modules\ModuleServiceProvider;
-use App\Modules\Customers\Authorization\CustomerPermission;
 use App\Modules\Customers\Console\GrantPortalAccessCommand;
+use App\Modules\Customers\Contracts\CustomerDirectoryInterface;
+use App\Modules\Customers\Contracts\CustomerGroupRepositoryInterface;
 use App\Modules\Customers\Contracts\CustomerRepositoryInterface;
+use App\Modules\Customers\Contracts\Enums\CustomerPermission;
 use App\Modules\Customers\Database\Models\Customer;
+use App\Modules\Customers\Database\Repositories\CustomerGroupRepository;
 use App\Modules\Customers\Database\Repositories\CustomerRepository;
+use App\Modules\Customers\Domain\Services\CustomerDirectory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
@@ -22,15 +23,15 @@ use Illuminate\Support\Str;
  *
  * Their identity starts here and never outside: someone is added to the books
  * at the counter, and given a portal login later only if the shop decides to.
+ * It owns who they are, the groups the owner puts them in, and finding them
+ * by any spelling of their name or a few digits of their phone — and no
+ * screen: the counter works with customers in Accounts, which reads them
+ * through these contracts.
  *
- * TODO(customers): the directory, and the fast Arabic-aware name lookup
- * TODO(customers): granting portal access from a screen rather than the console
+ * TODO(customers): granting portal access from Accounts' customer page rather than the console
  */
-final class CustomersServiceProvider extends ModuleServiceProvider implements ProvidesAdminNavigationInterface, ProvidesPermissionsInterface, UninstallableInterface
+final class CustomersServiceProvider extends ModuleServiceProvider implements ProvidesPermissionsInterface, UninstallableInterface
 {
-    /** Its screens, by area. */
-    protected array $routes = ['admin' => 'Areas/Admin/routes.php'];
-
     /**
      * What other modules may ask the container for. Each implementation is
      * `#[Scoped]`: one instance per request.
@@ -39,6 +40,8 @@ final class CustomersServiceProvider extends ModuleServiceProvider implements Pr
      */
     public array $bindings = [
         CustomerRepositoryInterface::class => CustomerRepository::class,
+        CustomerGroupRepositoryInterface::class => CustomerGroupRepository::class,
+        CustomerDirectoryInterface::class => CustomerDirectory::class,
     ];
 
     public function key(): string
@@ -52,18 +55,6 @@ final class CustomersServiceProvider extends ModuleServiceProvider implements Pr
     public function permissions(): array
     {
         return CustomerPermission::cases();
-    }
-
-    public function adminNavigation(): NavigationSection
-    {
-        return new NavigationSection($this->name(), [
-            new NavigationItem(
-                label: 'customers::module.navigation.customers',
-                route: 'admin.customers.index',
-                icon: 'people',
-                permission: CustomerPermission::View,
-            ),
-        ]);
     }
 
     public function boot(): void

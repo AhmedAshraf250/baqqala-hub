@@ -30,6 +30,15 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="color-scheme" content="light dark">
 
+        {{-- Added to a phone's home screen, the panel opens on its own, under its icon. --}}
+        <link rel="manifest" href="{{ route('admin.manifest') }}" crossorigin="use-credentials">
+        <meta name="theme-color" content="{{ config('admin.install.theme_color') }}">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-title" content="{{ __('shell.brand.name') }}">
+        <link rel="apple-touch-icon" href="{{ asset('admin-icons/apple-touch-icon.png') }}">
+        <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('admin-icons/icon-192.png') }}">
+
         <x-admin::layout.page-title :title="$title" />
 
         <x-admin::layout.color-mode-script />
@@ -60,6 +69,12 @@
 
             <x-admin::layout.footer />
         </div>
+
+        <x-admin::layout.confirm-dialog />
+
+        <livewire:admin::layout.search-palette />
+
+        <x-admin::layout.overlays />
 
         @stack('scripts')
     </body>

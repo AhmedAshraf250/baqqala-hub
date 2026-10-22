@@ -88,6 +88,49 @@ test('no view uses a colour that fails contrast in one of the modes', function (
     'Flux subtle text' => '/<flux:text\b[^>]*variant="subtle"/',
 ]);
 
+test('no view writes a figure in the typewriter face', function () {
+    // Figures are `.num`: the page's own face with digits of equal width.
+    // Bootstrap's monospace utility wins by !important, and its face beside
+    // Cairo is the clash the owner asked to be rid of.
+    $offenders = array_filter(
+        allViews(),
+        fn (string $view) => preg_match('/\bfont-monospace\b/', (string) file_get_contents(base_path($view))) === 1,
+    );
+
+    expect(array_values($offenders))->toBe([]);
+});
+
+test('anything in the admin that deletes, archives, or voids asks first, in the shell\'s own dialog', function () {
+    // `wire:confirm` is the browser's own box, with its own words on the
+    // buttons. A control calling delete…, archive…, or void… carries
+    // data-confirm instead, which resources/js/admin/modules/confirm.js turns
+    // into the shell's dialog.
+    $offenders = [];
+    $tag = '/<(?:button|a|input)\b(?:[^>"(]|"[^"]*"|\((?:[^()]|\([^()]*\))*\))*>/s';
+
+    foreach (allViews() as $view) {
+        if (! str_contains($view, '/admin/')) {
+            continue;
+        }
+
+        $source = (string) file_get_contents(base_path($view));
+
+        if (str_contains($source, 'wire:confirm')) {
+            $offenders[] = "{$view}: wire:confirm";
+        }
+
+        preg_match_all($tag, $source, $controls);
+
+        foreach ($controls[0] as $control) {
+            if (preg_match('/wire:click="(?:delete|archive|void)\w*/', $control) === 1 && ! str_contains($control, 'data-confirm=')) {
+                $offenders[] = "{$view}: ".preg_replace('/\s+/', ' ', $control);
+            }
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});
+
 test('every string a view asks for is a key, and exists in both languages', function () {
     // A sentence passed to __() is shown as written in every language — which
     // is how a hundred English lines once sat in an Arabic portal. Views ask

@@ -15,8 +15,11 @@ return [
         'access' => 'Access',
         'administrators' => 'Administrators',
         'roles' => 'Roles',
+        'audit' => 'Change log',
+        'trash' => 'Trash',
         'group' => [
             'overview' => 'Overview',
+            'counter' => 'Customers & accounts',
             'operations' => 'Operations',
             'system' => 'System',
         ],
@@ -27,6 +30,8 @@ return [
         'manage_administrators' => 'Manage administrators',
         'manage_roles' => 'Manage roles',
         'manage_settings' => 'Manage settings',
+        'view_audit_trail' => 'View the change log',
+        'manage_trash' => 'Restore deleted things, or delete them for good',
     ],
 
     'roles' => [
@@ -82,8 +87,69 @@ return [
         'breadcrumb' => 'Breadcrumb',
     ],
 
+    'trash' => [
+        'intro' => 'What is deleted stays here until you restore it or delete it for good. Ledger entries and customers are never deleted, so they never appear here.',
+        'empty_title' => 'The trash is empty',
+        'empty_description' => 'Nothing that can be restored has been deleted.',
+        'deleted' => 'Deleted :when',
+        'deleted_by' => 'Deleted by :name, :when',
+        'restore' => 'Restore',
+        'restore_named' => 'Restore «:name»',
+        'purge' => 'Delete for good',
+        'purge_named' => 'Delete «:name» for good',
+        'purge_confirm' => '«:name» is deleted for good, and cannot be restored after that.',
+        'restored' => '«:name» was restored.',
+        'purged' => '«:name» was deleted for good.',
+        'not_restored' => '«:name» could not be restored: what it was in is gone. Restore that first.',
+        'held' => '«:name» cannot be deleted for good: other records still name it. It stays in the trash.',
+        'gone' => 'That is no longer in the trash.',
+    ],
+
+    'audit' => [
+        'intro' => 'Who changed what, and when: names and phones, prices, credit limits, settings. Money is not here — every amount stays in the ledger, entry by entry.',
+        'search' => 'Search the change log',
+        'search_placeholder' => 'A customer, a product, a setting…',
+        'filter_person' => 'Who',
+        'everyone' => 'Everyone',
+        'filter_kind' => 'What',
+        'all_kinds' => 'Everything',
+        'filter_action' => 'What happened',
+        'all_actions' => 'Anything',
+        'filter_period' => 'When',
+        'period' => [
+            'today' => 'Today',
+            'week' => 'The last 7 days',
+            'month' => 'The last 30 days',
+            'all' => 'Any time',
+        ],
+        'count' => '{0} No changes|{1} 1 change|[2,*] :count changes',
+        'empty_title' => 'No changes here',
+        'empty_description' => 'Changes to names, phones, prices, limits, and settings show here as they happen.',
+        'by' => 'by :name',
+        'from_to' => 'from :from to :to',
+    ],
+
+    'search_select' => [
+        'search' => 'Search the list…',
+        'no_match' => 'Nothing matches.',
+    ],
+
+    'confirm' => [
+        'title' => 'Are you sure?',
+        'ok' => 'Yes, go ahead',
+        'cancel' => 'No, go back',
+    ],
+
     'table' => [
         'empty' => 'Nothing to show yet.',
+    ],
+
+    'pagination' => [
+        'label' => 'Pages',
+        'summary' => ':first–:last of :total',
+        'previous' => 'Previous page',
+        'next' => 'Next page',
+        'page' => 'Page :page',
     ],
 
     'auth' => [
@@ -138,6 +204,8 @@ return [
         'appearance_description' => 'Choose the theme and language for this browser.',
         'theme' => 'Theme',
         'theme_description' => 'Light, dark, or follow the system setting.',
+        'shortcuts' => 'Keyboard shortcuts',
+        'shortcuts_description' => 'Show the keys beside buttons, and answer them: / to search, N for a new customer, + and − to charge and take payment. Off, the keys and their hints are gone; the arrows and Enter still move through a list.',
         'language' => 'Language',
         'language_description' => 'Interface language and page direction.',
         'name' => 'Name',
@@ -154,10 +222,37 @@ return [
         'account' => 'Account',
         'account_description' => 'The details you sign in with, and the language the panel speaks.',
         'account_saved' => 'Your account details were saved.',
+        'business' => 'Business',
+        'business_description' => 'Applies to everyone: the time zone, and the hour the business day starts.',
+        'business_saved' => 'Business settings saved.',
+        'timezone' => 'Time zone',
+        'timezones_common' => 'Most used',
+        'timezones_all' => 'All time zones',
+        'timezone_now' => 'Time there now: :time',
+        'device_timezone' => 'Your device is set to',
+        'use_device_timezone' => 'Use it',
+        'day_starts_at' => 'The business day starts at',
+        'day_starts_midnight' => '12:00 midnight',
+        'day_starts_at_help' => 'If you close after midnight, pick an hour near closing, such as 04:00, so a sale at 01:30 counts towards the day it was made.',
+        'display_only' => 'This changes only how times are shown; nothing already recorded changes.',
+        'declared' => [
+            'on' => 'On',
+            'off' => 'Off',
+            'default' => 'Default: :value',
+            'saved' => 'Saved. It applies from the next thing recorded.',
+        ],
     ],
 
     'search' => [
         'placeholder' => 'Search customers or products…',
+        'title' => 'Quick search',
+        'before_typing' => 'Before you type: who was served today.',
+        'start' => 'Type a name, a few digits of a phone, or a product.',
+        'nothing' => 'Nothing found for «:term».',
+        'screens' => 'Screens',
+        'key_move' => 'move',
+        'key_open' => 'open',
+        'key_close' => 'close',
     ],
 
     'notifications' => [

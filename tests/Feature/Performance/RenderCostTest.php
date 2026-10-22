@@ -3,9 +3,14 @@
 use App\Admin\Authorization\PermissionRegistry;
 use App\Admin\Authorization\RoleDefinitions;
 use App\Admin\Navigation\AdminNavigation;
+use App\Admin\Overlays\AdminOverlays;
+use App\Admin\Search\AdminSearch;
 use App\Admin\Settings\AdminSettings;
+use App\Admin\Trash\AdminTrash;
 use App\Foundation\Modules\ModuleRegistry;
 use App\Foundation\Money\Money;
+use App\Foundation\Settings\SettingStore;
+use App\Foundation\Time\LocalClock;
 use App\Modules\Accounts\Database\Models\AccountTransaction;
 use App\Modules\Accounts\Database\Models\CustomerAccount;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
@@ -64,7 +69,9 @@ test('shared objects are one instance per request, and a new one the next', func
 
     expect(app($abstract))->not->toBe($first);
 })->with(function (): array {
-    $shell = [AdminNavigation::class, AdminSettings::class, PermissionRegistry::class, RoleDefinitions::class];
+    $foundation = [LocalClock::class, SettingStore::class];
+
+    $shell = [AdminNavigation::class, AdminOverlays::class, AdminSearch::class, AdminSettings::class, AdminTrash::class, PermissionRegistry::class, RoleDefinitions::class];
 
     // Every contract a module publishes — read from the providers' declared
     // bindings, because a dataset is resolved before the application boots.
@@ -72,7 +79,7 @@ test('shared objects are one instance per request, and a new one the next', func
         ->flatMap(fn (string $module) => array_keys((new ReflectionClass($module))->getDefaultProperties()['bindings'] ?? []))
         ->all();
 
-    return [...$shell, ...$published];
+    return [...$foundation, ...$shell, ...$published];
 });
 
 test('rendering an admin screen stays within a small query budget', function (string $role, int $budget) {
@@ -162,7 +169,7 @@ test('module routes survive route caching', function () {
 
         $cached = (string) file_get_contents($cache);
 
-        foreach (['admin.catalog.products.index', 'admin.customers.index', 'admin.sales.index', 'admin.dashboard'] as $name) {
+        foreach (['admin.catalog.products.index', 'admin.accounts.index', 'admin.sales.index', 'admin.dashboard'] as $name) {
             expect($cached)->toContain($name);
         }
     } finally {

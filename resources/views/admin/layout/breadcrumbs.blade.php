@@ -9,10 +9,11 @@
     A screen may suppress the trail entirely (`:breadcrumbs="false"`) when it
     is a single destination with its own internal navigation, such as Settings.
 
-    `$trail` comes from App\Admin\View\Components\Layout\Breadcrumbs, which
-    renders nothing when it is empty.
+    `$trail` and `$here` come from App\Admin\View\Components\Layout\Breadcrumbs,
+    which renders nothing when the trail is empty. `$here` is the current
+    screen's own name when it sits under the trail's last item.
 --}}
-<nav aria-label="{{ __('shell.layout.breadcrumb') }}">
+<nav aria-label="{{ __('shell.layout.breadcrumb') }}" @class(['d-none d-sm-block' => $onlyHere])>
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item">
             <a href="{{ route('admin.home') }}" aria-label="{{ __('shell.navigation.home') }}">
@@ -21,7 +22,7 @@
         </li>
 
         @foreach ($trail as $item)
-            @php($isLast = $loop->last)
+            @php($isLast = $loop->last && $here === null)
 
             <li @class(['breadcrumb-item', 'active' => $isLast]) @if ($isLast) aria-current="page" @endif>
                 @if ($isLast || $item->route === null)
@@ -31,5 +32,9 @@
                 @endif
             </li>
         @endforeach
+
+        @if ($here !== null)
+            <li class="breadcrumb-item active" aria-current="page" dir="auto">{{ $here }}</li>
+        @endif
     </ol>
 </nav>

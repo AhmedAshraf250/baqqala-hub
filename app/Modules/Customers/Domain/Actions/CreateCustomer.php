@@ -2,10 +2,13 @@
 
 namespace App\Modules\Customers\Domain\Actions;
 
+use App\Foundation\Audit\AuditAction;
+use App\Foundation\Audit\AuditTrail;
 use App\Foundation\Identity\Models\FrontendUser;
 use App\Modules\Customers\Contracts\CustomerRepositoryInterface;
 use App\Modules\Customers\Contracts\Data\CustomerData;
 use App\Modules\Customers\Contracts\Events\CustomerAdded;
+use App\Modules\Customers\Contracts\Exceptions\PhoneAlreadyUsed;
 use App\Modules\Customers\Database\Models\Customer;
 use Illuminate\Support\Facades\DB;
 
@@ -21,17 +24,29 @@ use Illuminate\Support\Facades\DB;
  * a portal login is granted later, and only if the shop decides to. When one is
  * passed it is a `FrontendUser` — the type says it, so an administrator's login
  * can never become someone's customer record.
+ *
+ * A phone number is one person's: one another customer has is refused, with
+ * who has it. The check runs inside the write transaction, which SQLite
+ * begins immediately, so two counters cannot both pass it; the column's
+ * unique index is the last word on any other database.
  */
 final readonly class CreateCustomer
 {
-    public function __construct(private CustomerRepositoryInterface $customers) {}
+    public function __construct(
+        private CustomerRepositoryInterface $customers,
+        private AuditTrail $audit,
+    ) {}
 
     /**
      * @param  array{name: string, phone?: string|null, address?: string|null, notes?: string|null}  $attributes
+     *
+     * @throws PhoneAlreadyUsed
      */
     public function handle(array $attributes, ?FrontendUser $login = null): CustomerData
     {
         $customer = DB::transaction(function () use ($attributes, $login): CustomerData {
+            Customer::assertPhoneFree($attributes['phone'] ?? null);
+
             $customer = $this->customers->save(new CustomerData(
                 id: null,
                 name: $attributes['name'],
@@ -39,6 +54,8 @@ final readonly class CreateCustomer
                 address: $attributes['address'] ?? null,
                 notes: $attributes['notes'] ?? null,
             ));
+
+            $this->audit->record('customers.customer', $customer->id, $customer->name, 'customers::module.audit.customer', AuditAction::Created);
 
             if ($login === null) {
                 return $customer;

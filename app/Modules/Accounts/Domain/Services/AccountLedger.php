@@ -2,11 +2,14 @@
 
 namespace App\Modules\Accounts\Domain\Services;
 
-use App\Foundation\Money\Money;
 use App\Modules\Accounts\Contracts\AccountLedgerInterface;
-use App\Modules\Accounts\Contracts\Enums\TransactionType;
-use App\Modules\Accounts\Domain\Actions\OpenAccount;
-use App\Modules\Accounts\Domain\Actions\PostAccountTransaction;
+use App\Modules\Accounts\Contracts\Data\ChargeRequest;
+use App\Modules\Accounts\Contracts\Data\PaymentRequest;
+use App\Modules\Accounts\Contracts\Data\PostedOperation;
+use App\Modules\Accounts\Contracts\Data\VoidRequest;
+use App\Modules\Accounts\Domain\Actions\RecordCharge;
+use App\Modules\Accounts\Domain\Actions\RecordPayment;
+use App\Modules\Accounts\Domain\Actions\VoidEntry;
 use Illuminate\Container\Attributes\Scoped;
 
 /**
@@ -19,25 +22,23 @@ use Illuminate\Container\Attributes\Scoped;
 final readonly class AccountLedger implements AccountLedgerInterface
 {
     public function __construct(
-        private OpenAccount $openAccount,
-        private PostAccountTransaction $post,
+        private RecordCharge $charge,
+        private RecordPayment $payment,
+        private VoidEntry $void,
     ) {}
 
-    public function post(
-        int $customerId,
-        TransactionType $type,
-        Money $amount,
-        int $postedBy,
-        ?string $description = null,
-        ?string $reference = null,
-    ): void {
-        $this->post->handle(
-            $this->openAccount->handle($customerId),
-            $type,
-            $amount,
-            $postedBy,
-            $description,
-            $reference,
-        );
+    public function charge(ChargeRequest $request): PostedOperation
+    {
+        return $this->charge->handle($request);
+    }
+
+    public function payment(PaymentRequest $request): PostedOperation
+    {
+        return $this->payment->handle($request);
+    }
+
+    public function void(VoidRequest $request): PostedOperation
+    {
+        return $this->void->handle($request);
     }
 }

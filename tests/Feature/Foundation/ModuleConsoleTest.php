@@ -1,8 +1,11 @@
 <?php
 
+use App\Modules\Accounts\AccountsServiceProvider;
 use App\Modules\Catalog\CatalogServiceProvider;
 use App\Modules\Customers\Database\Models\Customer;
+use App\Modules\Notebook\NotebookServiceProvider;
 use App\Modules\Purchases\PurchasesServiceProvider;
+use App\Modules\Reports\ReportsServiceProvider;
 use App\Modules\Sales\SalesServiceProvider;
 use Database\Seeders\AuthorizationSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -28,7 +31,7 @@ test('the list shows every module, disabled ones too, and where each stands', fu
     // Catalog is disabled with its tables left; Purchases is disabled and
     // then uninstalled, so nothing of it is stored.
     config(['modules.enabled' => array_values(array_diff(config('modules.enabled'), [
-        CatalogServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class,
+        CatalogServiceProvider::class, AccountsServiceProvider::class, NotebookServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class, ReportsServiceProvider::class,
     ]))]);
     Artisan::call('app:module:uninstall', ['module' => 'purchases', '--force' => true]);
 
@@ -46,9 +49,10 @@ test('show says what a module declares, what needs it, and what of it is stored'
 
     expect(consoleOutput('app:module:show', ['module' => 'customers']))
         ->toContain('App\Modules\Customers\CustomersServiceProvider')
-        ->toMatch('/Needed by\W+accounts, sales/')
+        ->toMatch('/Needed by\W+accounts, notebook, sales/')
         ->toMatch('/Implements\W+.*UninstallableInterface/')
-        ->toMatch('/Routes · admin\W+Areas\/Admin\/routes\.php · \d+ routes?/')
+        // Its customers are worked with on Accounts' screens; it has none.
+        ->toMatch('/Routes · admin\W+—/')
         ->toMatch('/Publishes\W+CustomerRepositoryInterface/')
         ->toContain('app:customers:grant-portal-access')
         ->toMatch('/table customers\W+2 rows/')
@@ -57,7 +61,7 @@ test('show says what a module declares, what needs it, and what of it is stored'
 
 test('show describes a disabled module from what it declares', function () {
     config(['modules.enabled' => array_values(array_diff(config('modules.enabled'), [
-        CatalogServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class,
+        CatalogServiceProvider::class, AccountsServiceProvider::class, NotebookServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class, ReportsServiceProvider::class,
     ]))]);
 
     expect(consoleOutput('app:module:show', ['module' => 'catalog']))
@@ -72,14 +76,21 @@ test('only an enabled module\'s migrations are counted as waiting', function () 
     // to run it for one is telling them to do nothing.
     $this->seed(AuthorizationSeeder::class);
     config(['modules.enabled' => array_values(array_diff(config('modules.enabled'), [
-        CatalogServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class,
+        CatalogServiceProvider::class, AccountsServiceProvider::class, NotebookServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class, ReportsServiceProvider::class,
     ]))]);
+    Artisan::call('app:module:uninstall', ['module' => 'reports', '--force' => true]);
+    Artisan::call('app:module:uninstall', ['module' => 'notebook', '--force' => true]);
+    Artisan::call('app:module:uninstall', ['module' => 'accounts', '--force' => true]);
     Artisan::call('app:module:uninstall', ['module' => 'purchases', '--force' => true]);
     Artisan::call('app:module:uninstall', ['module' => 'sales', '--force' => true]);
     Artisan::call('app:module:uninstall', ['module' => 'catalog', '--force' => true]);
 
+    // Counted from the folder, so a module's next migration does not change
+    // what this test is about.
+    $migrations = count(glob(app_path('Modules/Catalog/Database/Migrations/*.php')) ?: []);
+
     expect(consoleOutput('about', ['--only' => 'foundation']))->toMatch('/Module migrations pending\W+none/')
-        ->and(consoleOutput('app:module:show', ['module' => 'catalog']))->toContain('0 ran, 2 not run while it is disabled');
+        ->and(consoleOutput('app:module:show', ['module' => 'catalog']))->toContain("0 ran, {$migrations} not run while it is disabled");
 });
 
 test('an unknown module is named in the refusal', function () {

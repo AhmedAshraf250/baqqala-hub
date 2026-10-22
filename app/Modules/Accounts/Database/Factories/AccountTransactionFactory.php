@@ -4,6 +4,7 @@ namespace App\Modules\Accounts\Database\Factories;
 
 use App\Foundation\Identity\Models\User;
 use App\Foundation\Money\Money;
+use App\Modules\Accounts\Contracts\Enums\EntryKind;
 use App\Modules\Accounts\Contracts\Enums\TransactionType;
 use App\Modules\Accounts\Database\Models\AccountTransaction;
 use App\Modules\Accounts\Database\Models\CustomerAccount;
@@ -31,10 +32,12 @@ class AccountTransactionFactory extends Factory
     public function definition(): array
     {
         $amount = Money::fromMinorUnits(fake()->numberBetween(100, 20000));
+        $type = fake()->randomElement(TransactionType::cases());
 
         return [
             'account_id' => CustomerAccount::factory(),
-            'type' => fake()->randomElement(TransactionType::cases()),
+            'type' => $type,
+            'kind' => $type === TransactionType::Debit ? EntryKind::Charge : EntryKind::Payment,
             'amount' => $amount,
             'outstanding_after' => $amount,
             'description' => fake()->sentence(),
@@ -49,6 +52,7 @@ class AccountTransactionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => TransactionType::Debit,
+            'kind' => EntryKind::Charge,
         ]);
     }
 
@@ -57,6 +61,7 @@ class AccountTransactionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => TransactionType::Credit,
+            'kind' => EntryKind::Payment,
         ]);
     }
 }

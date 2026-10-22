@@ -8,6 +8,8 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Console\Kernel as Artisan;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+use RuntimeException;
 use SplFileInfo;
 
 /**
@@ -55,11 +57,27 @@ final readonly class SyncCaches implements SyncStepInterface
 
     /**
      * Rebuild each cache that is out of sync, with Laravel's own command.
+     *
+     * `view:clear` reports success even when the operating system refused to
+     * delete a file — on Windows, files an administrator's terminal compiled
+     * cannot be deleted from an ordinary one. So the compiled views are looked
+     * at again afterwards, and a refusal is said out loud.
      */
     public function fix(?ModuleServiceProvider $module = null): void
     {
         foreach ($this->findings() as [$cache]) {
             $this->artisan->call(self::Rebuild[$cache]);
+        }
+
+        $left = $this->olderCompiledViews();
+
+        if ($left !== []) {
+            throw new RuntimeException(sprintf(
+                'Could not delete %d compiled %s in %s: the operating system refused. On Windows this happens when an administrator\'s terminal compiled them — delete them from an administrator terminal, or give your account Modify rights on the project folder, then run this again.',
+                count($left),
+                Str::plural('view', count($left)),
+                (string) $this->config->get('view.compiled'),
+            ));
         }
     }
 
@@ -94,6 +112,18 @@ final readonly class SyncCaches implements SyncStepInterface
      */
     private function compiledViews(): ?array
     {
+        $older = $this->olderCompiledViews();
+
+        return $older === []
+            ? null
+            : ['views', count($older).' compiled before a component class last changed, and may use the old answer'];
+    }
+
+    /**
+     * @return list<SplFileInfo>
+     */
+    private function olderCompiledViews(): array
+    {
         $compiled = (string) $this->config->get('view.compiled');
 
         $newestClass = max([0, ...array_map(
@@ -104,13 +134,12 @@ final readonly class SyncCaches implements SyncStepInterface
             )),
         )]);
 
-        $older = array_filter(
+        // Read afresh: the fix asks again right after deleting.
+        clearstatcache();
+
+        return array_values(array_filter(
             is_dir($compiled) ? File::files($compiled) : [],
             static fn (SplFileInfo $file): bool => $file->getMTime() < $newestClass,
-        );
-
-        return $older === []
-            ? null
-            : ['views', count($older).' compiled before a component class last changed, and may use the old answer'];
+        ));
     }
 }

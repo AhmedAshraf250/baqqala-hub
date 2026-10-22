@@ -5,7 +5,9 @@ use App\Foundation\Money\Money;
 use App\Modules\Accounts\Contracts\AccountLedgerInterface;
 use App\Modules\Accounts\Contracts\AccountRepositoryInterface;
 use App\Modules\Accounts\Contracts\Data\AccountStanding;
-use App\Modules\Accounts\Contracts\Enums\TransactionType;
+use App\Modules\Accounts\Contracts\Data\ChargeLine;
+use App\Modules\Accounts\Contracts\Data\ChargeRequest;
+use App\Modules\Accounts\Contracts\Data\PostedOperation;
 use App\Modules\Accounts\Contracts\Events\AccountEntryPosted;
 use App\Modules\Accounts\Contracts\Exceptions\CreditLimitExceeded;
 use App\Modules\Accounts\Database\Models\CustomerAccount;
@@ -18,8 +20,23 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Str;
 
 uses(LazilyRefreshDatabase::class);
+
+/**
+ * Goods taken on account through the published contract, as another module
+ * would put a basket on account: one free line of the given amount.
+ */
+function chargeOnAccount(int $customerId, string $amount, int $postedBy, string $note = 'Groceries'): PostedOperation
+{
+    return app(AccountLedgerInterface::class)->charge(new ChargeRequest(
+        customerId: $customerId,
+        postedBy: $postedBy,
+        operationId: (string) Str::uuid(),
+        lines: [ChargeLine::free($note, Money::fromDecimalString($amount))],
+    ));
+}
 
 test('a customer crosses the boundary as data, not as a record', function () {
     $customer = app(CreateCustomer::class)->handle(['name' => 'أم أحمد', 'phone' => '01000000001']);
@@ -101,12 +118,7 @@ test('an announcement from a transaction that rolls back is never heard', functi
         DB::transaction(function () use ($postedBy) {
             $customer = app(CreateCustomer::class)->handle(['name' => 'Rolled back']);
 
-            app(AccountLedgerInterface::class)->post(
-                $customer->id,
-                TransactionType::Debit,
-                Money::fromDecimalString('10.00'),
-                $postedBy,
-            );
+            chargeOnAccount($customer->id, '10.00', $postedBy);
 
             throw new RuntimeException('The larger operation failed.');
         });
@@ -122,17 +134,11 @@ test('another module moves a balance through the contract, not the action', func
     $customer = app(CreateCustomer::class)->handle(['name' => 'On account']);
     $postedBy = AdminUser::factory()->create()->getKey();
 
-    $ledger = app(AccountLedgerInterface::class);
+    $posted = chargeOnAccount($customer->id, '40.00', $postedBy, 'Two bags of rice');
 
-    $ledger->post(
-        $customer->id,
-        TransactionType::Debit,
-        Money::fromDecimalString('40.00'),
-        $postedBy,
-        'Two bags of rice',
-    );
-
-    expect(app(AccountRepositoryInterface::class)->findByCustomer($customer->id)->outstanding->toDecimalString())->toBe('40.00');
+    expect(app(AccountRepositoryInterface::class)->findByCustomer($customer->id)->outstanding->toDecimalString())->toBe('40.00')
+        ->and($posted->outstandingAfter()->toDecimalString())->toBe('40.00')
+        ->and($posted->first()->outstandingBefore->isZero())->toBeTrue();
 });
 
 test('the ledger opens an account the announcement never did', function () {
@@ -144,12 +150,7 @@ test('the ledger opens an account the announcement never did', function () {
 
     expect(CustomerAccount::query()->where('customer_id', $customer->id)->exists())->toBeFalse();
 
-    app(AccountLedgerInterface::class)->post(
-        $customer->id,
-        TransactionType::Debit,
-        Money::fromDecimalString('5.00'),
-        AdminUser::factory()->create()->getKey(),
-    );
+    chargeOnAccount($customer->id, '5.00', AdminUser::factory()->create()->getKey());
 
     expect(app(AccountRepositoryInterface::class)->findByCustomer($customer->id)->outstanding->toDecimalString())->toBe('5.00');
 });
@@ -184,12 +185,7 @@ test('a refusal crosses the boundary as data, not as the account', function () {
         ->update(['credit_limit' => Money::fromDecimalString('10.00')->minorUnits]);
 
     try {
-        app(AccountLedgerInterface::class)->post(
-            $customer->id,
-            TransactionType::Debit,
-            Money::fromDecimalString('10.01'),
-            AdminUser::factory()->create()->getKey(),
-        );
+        chargeOnAccount($customer->id, '10.01', AdminUser::factory()->create()->getKey());
 
         $this->fail('The debit should have been refused.');
     } catch (CreditLimitExceeded $refusal) {
@@ -228,7 +224,7 @@ test('reads and the one write are separate contracts', function () {
     $ledger = new ReflectionClass(AccountLedgerInterface::class);
 
     expect(collect($repository->getMethods())->map->getName()->all())->toBe(['findByCustomer', 'findManyByCustomers', 'save'])
-        ->and(collect($ledger->getMethods())->map->getName()->all())->toBe(['post']);
+        ->and(collect($ledger->getMethods())->map->getName()->all())->toBe(['charge', 'payment', 'void']);
 });
 
 test('the customer repository saves and deletes, and fetches what it saved', function () {

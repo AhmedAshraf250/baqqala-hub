@@ -114,9 +114,21 @@ test('a screen without a title of its own is named by the sidebar, in the tab to
     // browser tab did not, and every unbuilt section read only the product's name.
     actingAsAdmin();
 
-    $html = $this->get(route('admin.customers.index'))->assertOk()->getContent();
+    $html = $this->get(route('admin.catalog.stock.index'))->assertOk()->getContent();
 
-    expect($html)->toContain('<title>'.e(__('customers::module.navigation.customers')).' — '.e(__('shell.brand.name')).'</title>');
+    expect($html)->toContain('<title>'.e(__('catalog::module.navigation.stock')).' — '.e(__('shell.brand.name')).'</title>');
+});
+
+test('a screen reached from a sidebar item sits under it in the trail, named last', function () {
+    // The profile is reached from the user menu, and the sidebar lights
+    // Settings for it: it reads «⌂ / Settings / Profile».
+    actingAsAdmin();
+
+    $html = $this->get(route('admin.profile'))->assertOk()->getContent();
+
+    expect($html)
+        ->toContain('<a href="'.route('admin.settings').'">'.e(__('shell.navigation.settings')).'</a>')
+        ->toMatch('/<li class="breadcrumb-item active" aria-current="page" dir="auto">\s*'.preg_quote(e(__('shell.navigation.profile')), '/').'\s*<\/li>/');
 });
 
 test('what the last action flashed is shown once, as an alert', function () {

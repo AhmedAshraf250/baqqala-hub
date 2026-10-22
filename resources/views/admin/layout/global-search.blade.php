@@ -1,25 +1,21 @@
 {{--
-    The header search box.
-
-    This is the entry point for the fast customer/product lookup: it posts
-    nothing yet and has no results dropdown. The markup, keyboard shortcut hint,
-    and ARIA wiring are in place; how modules offer results to it is not built
-    yet.
+    The header's way into the quick search: a field-shaped button on a wide
+    screen, an icon on a narrow one. Either — or Ctrl K from anywhere — opens
+    `admin::layout.search-palette`, through
+    resources/js/admin/modules/search-palette.js.
 --}}
-<form class="d-none d-md-flex flex-grow-1 mx-3" role="search" action="#" method="GET" autocomplete="off">
-    <div class="input-group global-search">
-        <span class="input-group-text bg-body border-end-0">
-            <i class="bi bi-search" aria-hidden="true"></i>
-        </span>
+<div class="d-none d-md-flex flex-grow-1 mx-3">
+    <button type="button" class="global-search global-search-trigger form-control d-flex align-items-center gap-2" data-search-palette-open aria-keyshortcuts="Control+K">
+        <i class="bi bi-search text-body-secondary" aria-hidden="true"></i>
+        <span class="flex-grow-1 text-start text-body-secondary">{{ __('shell.search.placeholder') }}</span>
+        <kbd class="kbd-hint small" aria-hidden="true">Ctrl K</kbd>
+    </button>
+</div>
 
-        <input
-            type="search"
-            name="q"
-            class="form-control border-start-0"
-            placeholder="{{ __('shell.search.placeholder') }}"
-            aria-label="{{ __('shell.actions.search') }}"
-            minlength="{{ config('admin.search.min_query_length') }}"
-            disabled
-        >
-    </div>
-</form>
+<ul class="navbar-nav d-md-none" role="list" aria-label="{{ __('shell.actions.search') }}">
+    <li class="nav-item">
+        <button type="button" class="nav-link btn btn-link" data-search-palette-open aria-label="{{ __('shell.actions.search') }}">
+            <i class="bi bi-search" aria-hidden="true"></i>
+        </button>
+    </li>
+</ul>

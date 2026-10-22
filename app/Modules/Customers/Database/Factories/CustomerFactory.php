@@ -23,7 +23,8 @@ class CustomerFactory extends Factory
         return [
             'user_id' => null,
             'name' => fake()->name(),
-            'phone' => fake()->unique()->phoneNumber(),
+            // An Egyptian mobile number, as the counter takes them.
+            'phone' => fake()->unique()->numerify('01#########'),
             'address' => fake()->address(),
             'notes' => null,
         ];

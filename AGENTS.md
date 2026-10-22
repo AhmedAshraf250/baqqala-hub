@@ -241,7 +241,10 @@ Foundation   how anyone reaches it      →  app/Foundation/
   `Config/{key}.php` reads is listed in `.env.example` — a test fails otherwise.
 - A module adds to an area only through that area's interfaces:
   `ProvidesAdminNavigationInterface`, `ProvidesPermissionsInterface`,
-  `ProvidesAdminSettingsInterface`. A real dependency is declared with
+  `ProvidesAdminSettingsInterface`, `ProvidesAdminSearchInterface`,
+  `ProvidesAdminOverlaysInterface` (a component kept on every screen, which
+  reads nothing until it is opened), `ProvidesTrashInterface` (what it
+  deletes, to be restored from the trash). A real dependency is declared with
   `DependsOnModulesInterface`; the graph must stay acyclic, and a missing
   dependency stops the application at boot.
 - The shell wraps a module's routes in its key: `/admin/{key}/…`,
@@ -266,7 +269,7 @@ Foundation   how anyone reaches it      →  app/Foundation/
   in and out, and **no rule and no event in it**. It offers only what its data
   permits: the accounts repository never writes what a customer owes and has
   no `delete`. An operation with rules → a named service contract
-  (`AccountLedgerInterface::post()`); a business step like `CreateCustomer`
+  (`AccountLedgerInterface::charge()`); a business step like `CreateCustomer`
   saves through the repository and then announces. Announcing something → an
   event from `Contracts/Events/`.
 - The repository is the boundary for *other* modules. Inside its own module,
@@ -285,6 +288,10 @@ Foundation   how anyone reaches it      →  app/Foundation/
   something for every module contributes an `UninstallStepInterface`, tagged in
   its provider.
 - Every published event implements `ShouldDispatchAfterCommit`.
+- **The one exception: Reports reads tables.** `app/Modules/Reports` reads
+  other modules' tables with `DB::table()` — never their models — and writes
+  nothing; it declares each module it reads in `dependsOn()`, and every total
+  counts only what stands (`Ledger::standing()`). No other module may.
 - The one allowance: a module's `Database/` fixtures may use a declared
   dependency's `Database/` factories.
 
@@ -347,7 +354,9 @@ Foundation   how anyone reaches it      →  app/Foundation/
 ## Admin shell
 
 - `AdminNavigation` is the one source for the sidebar, breadcrumbs, content
-  header, and tab title. **Never write a breadcrumb by hand.** A screen with its
+  header, and tab title. **Never write a breadcrumb by hand.** A screen reached
+  from one in the tree — a record's own page — is named in that item's
+  `activeWhen`, and the trail ends with its title. A screen with its
   own internal navigation passes `:breadcrumbs="false"`.
 - **`#[Scoped]` where there is a reason**: every repository and service a
   module publishes, and every object that keeps state for the request (the
@@ -385,6 +394,10 @@ Foundation   how anyone reaches it      →  app/Foundation/
 - A full-page Livewire component renders inside its `#[Layout]`; its view holds
   only the page body. Pass title and breadcrumbs with `$view->layoutData()` from
   `rendering()`.
+- Anything in the admin that deletes, archives, or voids asks first, in the
+  shell's dialog: the control carries `data-confirm="what will happen"`
+  (`resources/js/admin/modules/confirm.js`), never `wire:confirm` — a test
+  fails otherwise.
 - **No `<style>`, no `style=`, no `:style=`, no `<script>` in Blade**, except the
   colour-mode script. Styling goes in `resources/css/admin/_theme.css` as
   classes; behaviour in `resources/js/{area}/modules/`.
@@ -410,16 +423,42 @@ Foundation   how anyone reaches it      →  app/Foundation/
   that remove the same data on uninstall. A seeder that stores the same data
   calls the same steps.
 
+## Deleting
+
+- What can be deleted goes to the trash first: `SoftDeletes` on its model (or
+  a status, for a record that has one), and a `TrashSourceInterface` that
+  restores it and purges it, each recorded in the change log (`Restored`,
+  `Purged`). Ledger entries and customers are never deleted.
+- A uniqueness check, a slug, an «add what is missing» step, and an
+  `exists` rule all reckon with what is in the trash (`withTrashed()`,
+  `whereNull('deleted_at')`).
+
+## The change log
+
+- A change to anything the shop keeps that is not money — a name, a mobile,
+  a price, a credit limit, a group, a category, a setting — is recorded with
+  `App\Foundation\Audit\AuditTrail::record()` in the step that makes it,
+  inside its transaction. The subject is `{key}.{thing}`; the kind and each
+  field's name are translation keys. `AuditEntry` rows are never edited.
+  Money is the ledger's history, never the log's.
+
 ## Money and the ledger
 
 - Money is an integer count of minor units: `bigInteger` columns,
   `App\Foundation\Money\Money`, `MoneyCast`. Never `decimal`, never `float`,
   never arithmetic operators on an amount. Parse input with
-  `Money::fromDecimalString()`; display with `<x-admin::ui.money>`.
+  `Money::fromDecimalString()` — it reads Arabic-Indic digits too; any other
+  typed number goes through `App\Foundation\Text\Numerals` first. Display with
+  `<x-admin::ui.money>`; fill an input with `toDecimalString()`, never the
+  grouped `toDisplayString()`.
 - `customer_accounts.outstanding` is what the customer owes. It is written only
-  by `PostAccountTransaction`, is never fillable, and ledger rows are never
-  edited — correct a mistake by posting its inverse. `Debit` («عليه») raises it,
-  `Credit` («له») lowers it.
+  by `PostAccountTransaction`, with the summary beside it, and is never
+  fillable. Ledger rows and their lines are never edited or deleted — the
+  models refuse: void with a reversal (`VoidEntry`), correct with a reversal
+  and a replacement (`CorrectEntry`). `Debit` («عليه») raises it, `Credit`
+  («له») lowers it; the entry's `EntryKind` says what happened.
+- Every ledger write carries an operation id, and an operation decided from a
+  balance carries the latest entry the person saw. Never post without one.
 - Aggregate in the database, not in PHP.
 
 ## Language and configuration
@@ -436,6 +475,24 @@ Foundation   how anyone reaches it      →  app/Foundation/
 - Settings: each layer's in its own file — `config/foundation.php`,
   `config/admin.php`, `config/frontend.php` — roles in `config/roles.php`, a
   module's in its `Config/{key}.php`. Never call `env()` outside a config file.
+  A value the owner changes from the panel is read from
+  `App\Foundation\Settings\SettingStore` with its configured value as the
+  default: declared once as a `SettingDefinition` by the layer that reads it,
+  offered as a tab with `SettingsSection::declared()`, and read through that
+  layer's own typed accessor (`AccountSettings`) — never a word or a number
+  the owner would want to change written into a screen.
+- Moments are stored in UTC and `app.timezone` stays UTC. Show one with
+  `local_time()`; ask `App\Foundation\Time\LocalClock` for "today" and for a
+  day's bounds (`dayBounds()`), which follow the owner's zone and the hour the
+  business day starts. Never compare a stored moment with a local date by hand.
+- Text that is searched is folded with `App\Foundation\Text\SearchText` on both
+  sides — stored as a `search_name` column, applied to the query. A phone
+  number is stored as `App\Foundation\Text\PhoneNumber::normalize()` gives it,
+  and searched by its digits.
+- A customer is added or changed through `CustomerDirectoryInterface` from
+  outside Customers — never by saving through its repository, which skips the
+  rule that one phone number is one person. No test can see which a caller
+  chose: keep that one in review.
 
 ## Testing
 

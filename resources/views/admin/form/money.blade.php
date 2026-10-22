@@ -23,8 +23,8 @@
             value="{{ old($name, $value?->toDecimalString()) }}"
             @if ($required) required @endif
             @if ($errors->has($name)) aria-invalid="true" aria-describedby="{{ $name }}-error" @endif
-            {{ $attributes->class(['form-control font-monospace', 'is-invalid' => $errors->has($name)]) }}
+            {{ $attributes->class(['form-control num', 'is-invalid' => $errors->has($name)]) }}
         >
-        <span class="input-group-text">{{ config('foundation.currency.symbol') }}</span>
+        <span class="input-group-text">{{ currency_symbol() }}</span>
     </div>
 </x-admin::form.field>

@@ -12,6 +12,14 @@ parameters:
 
     level: 7
 
+    # A module's templates live under app/ but are templates, as the shells'
+    # in resources/views are, and are read no more than those: a Livewire
+    # screen's computed properties are magic, and its `new class` reads as a
+    # bare expression. What a screen does that matters is tested.
+    excludePaths:
+        analyse:
+            - app/Modules/*/Resources/views/*
+
     # A module's defaults are merged into configuration at boot, so they are
     # captured by config:cache exactly like the files in config/.
     configDirectories:

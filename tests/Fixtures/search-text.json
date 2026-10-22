@@ -1,0 +1,21 @@
+{
+    "_comment": "What App\\Foundation\\Text\\SearchText::normalize() and its JavaScript twin must both produce. One file, read by both test suites, so the two can never fold a word differently.",
+    "cases": [
+        { "input": "أحمد", "expected": "احمد", "why": "hamza on alef" },
+        { "input": "إسماعيل", "expected": "اسماعيل", "why": "hamza under alef" },
+        { "input": "آمال", "expected": "امال", "why": "madda" },
+        { "input": "جبنة بيضا", "expected": "جبنه بيضا", "why": "taa marbuta" },
+        { "input": "مصطفى", "expected": "مصطفي", "why": "alef maqsura" },
+        { "input": "لؤلؤ", "expected": "لولو", "why": "hamza on waw" },
+        { "input": "شاطئ", "expected": "شاطي", "why": "hamza on yaa" },
+        { "input": "سُكَّر", "expected": "سكر", "why": "vowel marks and shadda" },
+        { "input": "سـكـر", "expected": "سكر", "why": "tatweel" },
+        { "input": "٠١٠٠ ١٢٣ ٥٦٧٨", "expected": "0100 123 5678", "why": "Arabic-Indic digits" },
+        { "input": "زيت عافية 2.25 لتر", "expected": "زيت عافيه 2.25 لتر", "why": "a decimal size keeps its point" },
+        { "input": "Chipsy", "expected": "chipsy", "why": "Latin is lower-cased" },
+        { "input": "  محمد   أحمد  ", "expected": "محمد احمد", "why": "spaces collapse" },
+        { "input": "شيبسي (عائلي) - طماطم.", "expected": "شيبسي عايلي طماطم", "why": "punctuation separates words" },
+        { "input": "علف مواشي 16%", "expected": "علف مواشي 16", "why": "symbols separate words" },
+        { "input": "", "expected": "", "why": "nothing stays nothing" }
+    ]
+}

@@ -3,6 +3,7 @@
 use App\Modules\Accounts\AccountsServiceProvider;
 use App\Modules\Catalog\CatalogServiceProvider;
 use App\Modules\Customers\CustomersServiceProvider;
+use App\Modules\Notebook\NotebookServiceProvider;
 use App\Modules\Purchases\PurchasesServiceProvider;
 use App\Modules\Reports\ReportsServiceProvider;
 use App\Modules\Sales\SalesServiceProvider;
@@ -39,6 +40,7 @@ return [
         CatalogServiceProvider::class,
         CustomersServiceProvider::class,
         AccountsServiceProvider::class,
+        NotebookServiceProvider::class,
         SuppliersServiceProvider::class,
         PurchasesServiceProvider::class,
         SalesServiceProvider::class,

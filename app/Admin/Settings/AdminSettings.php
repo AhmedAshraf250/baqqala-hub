@@ -44,9 +44,10 @@ final class AdminSettings
     }
 
     /**
-     * The tabs that configure the business rather than the person — tax rules,
-     * printing, an integration's credentials — which a module contributes the
-     * way it contributes navigation. Only someone who may configure the panel
+     * The tabs that configure the business rather than the person — the
+     * shell's own, where the business is in time, then whatever the modules
+     * contribute the way they contribute navigation: tax rules, printing, an
+     * integration's credentials. Only someone who may configure the panel
      * sees them; everyone sees their own.
      *
      * @return list<SettingsSection>
@@ -57,10 +58,13 @@ final class AdminSettings
             return [];
         }
 
-        return array_values($this->modules
-            ->providing(ProvidesAdminSettingsInterface::class)
-            ->flatMap(static fn (ProvidesAdminSettingsInterface $module): array => $module->adminSettings())
-            ->all());
+        return [
+            new SettingsSection('business', 'admin::page.settings.business', 'shell.settings.business', 'shell.settings.business_description', 'shop'),
+            ...array_values($this->modules
+                ->providing(ProvidesAdminSettingsInterface::class)
+                ->flatMap(static fn (ProvidesAdminSettingsInterface $module): array => $module->adminSettings())
+                ->all()),
+        ];
     }
 
     /**

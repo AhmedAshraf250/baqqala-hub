@@ -22,6 +22,10 @@ enum AdminPermission: string implements PermissionInterface
 
     case ManageSettings = 'settings.manage';
 
+    case ViewAuditTrail = 'audit.view';
+
+    case ManageTrash = 'trash.manage';
+
     public function label(): string
     {
         return __('shell.permissions.'.Str::snake($this->name));

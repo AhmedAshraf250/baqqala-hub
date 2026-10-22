@@ -2,8 +2,8 @@
 
 namespace App\Modules\Accounts\Domain\Actions;
 
-use App\Foundation\Money\Money;
 use App\Modules\Accounts\Database\Models\CustomerAccount;
+use App\Modules\Accounts\Domain\Services\AccountSettings;
 
 /**
  * Opens a customer's running account, or returns the one they already have.
@@ -23,7 +23,7 @@ final class OpenAccount
     {
         return CustomerAccount::query()->firstOrCreate(
             ['customer_id' => $customerId],
-            ['credit_limit' => Money::fromDecimalString((string) config('accounts.default_credit_limit'))],
+            ['credit_limit' => app(AccountSettings::class)->defaultCreditLimit()],
         );
     }
 }

@@ -15,10 +15,11 @@ use App\Foundation\Identity\Models\FrontendUser;
 use App\Foundation\Modules\ModuleInspector;
 use App\Foundation\Modules\ModuleRegistry;
 use App\Foundation\Modules\ModuleServiceProvider;
+use App\Modules\Accounts\AccountsServiceProvider;
 use App\Modules\Accounts\Authorization\AccountPermission;
 use App\Modules\Catalog\Authorization\CatalogPermission;
 use App\Modules\Catalog\CatalogServiceProvider;
-use App\Modules\Customers\Authorization\CustomerPermission;
+use App\Modules\Customers\Contracts\Enums\CustomerPermission;
 use App\Modules\Purchases\PurchasesServiceProvider;
 use App\Modules\Sales\SalesServiceProvider;
 use Database\Seeders\AuthorizationSeeder;
@@ -130,6 +131,9 @@ test('a cashier is granted only what the counter needs', function () {
 
     expect($cashier->can(AccountPermission::Post->value))->toBeTrue()
         ->and($cashier->can(CustomerPermission::View->value))->toBeTrue()
+        // A new customer stands at the counter; changing one is the manager's.
+        ->and($cashier->can(CustomerPermission::Create->value))->toBeTrue()
+        ->and($cashier->can(CustomerPermission::Manage->value))->toBeFalse()
         ->and($cashier->can(AdminPermission::ManageAdministrators->value))->toBeFalse()
         ->and($cashier->can(CatalogPermission::Manage->value))->toBeFalse();
 });
@@ -148,7 +152,7 @@ test('a section an administrator may not see is closed at its url too', function
     $this->get(route('admin.access.administrators.index'))->assertForbidden();
     $this->get(route('admin.catalog.stock.index'))->assertForbidden();
 
-    $this->get(route('admin.customers.index'))->assertOk();
+    $this->get(route('admin.accounts.index'))->assertOk();
 });
 
 test('the sidebar hides what the administrator may not reach', function () {
@@ -156,7 +160,7 @@ test('the sidebar hides what the administrator may not reach', function () {
 
     $this->get(route('admin.dashboard'))
         ->assertOk()
-        ->assertSee(__('customers::module.navigation.customers'))
+        ->assertSee(__('accounts::module.navigation.customers'))
         ->assertDontSee(__('catalog::module.navigation.stock'))
         ->assertDontSee(__('shell.navigation.administrators'));
 });
@@ -181,7 +185,7 @@ test('the owner sees every module section', function () {
 
     $response = $this->get(route('admin.dashboard'))->assertOk();
 
-    foreach (['catalog::module.navigation.products', 'customers::module.navigation.customers', 'accounts::module.navigation.accounts', 'shell.navigation.access'] as $label) {
+    foreach (['catalog::module.navigation.products', 'accounts::module.navigation.customers', 'shell.navigation.access'] as $label) {
         $response->assertSee(__($label));
     }
 });
@@ -212,9 +216,9 @@ test('disabling a module takes its permissions off roles, and keeps the records'
     // The seeder as it runs when Catalog, and the modules that need it, are
     // not enabled.
     config(['modules.enabled' => array_values(array_diff(config('modules.enabled'), [
-        CatalogServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class,
+        CatalogServiceProvider::class, AccountsServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class,
     ]))]);
-    $running = new ModuleRegistry(app(ModuleRegistry::class)->all()->except(['catalog', 'purchases', 'sales'])->values()->all());
+    $running = new ModuleRegistry(app(ModuleRegistry::class)->all()->except(['catalog', 'accounts', 'purchases', 'sales'])->values()->all());
     $permissions = new PermissionRegistry($running);
     $registrar = app(PermissionRegistrar::class);
 

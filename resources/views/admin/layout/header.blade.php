@@ -38,9 +38,10 @@
             {{--
                 AdminLTE's FullScreen plugin swaps these two icons by toggling
                 `d-none`, so both must be present and the minimize one must
-                start hidden.
+                start hidden. Not on a phone, where the screen is all there is
+                and the toolbar has no room to spare.
             --}}
-            <li class="nav-item">
+            <li class="nav-item d-none d-md-block">
                 <a
                     class="nav-link"
                     href="#"

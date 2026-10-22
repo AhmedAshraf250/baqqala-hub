@@ -9,7 +9,9 @@ use App\Modules\Catalog\Database\Models\Product;
 use App\Modules\Customers\CustomersServiceProvider;
 use App\Modules\Customers\Database\Models\Customer;
 use App\Modules\Customers\Domain\Actions\GrantPortalAccess;
+use App\Modules\Notebook\NotebookServiceProvider;
 use App\Modules\Purchases\PurchasesServiceProvider;
+use App\Modules\Reports\ReportsServiceProvider;
 use App\Modules\Sales\SalesServiceProvider;
 use Database\Seeders\AuthorizationSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -47,13 +49,15 @@ function uninstalled(string ...$keys): void
 }
 
 /**
- * The catalog, disabled with the two modules that depend on it, and those two
- * uninstalled: what a test about uninstalling the catalog starts from.
+ * The catalog, disabled with the modules that depend on it — Accounts prices
+ * charges from it, Reports reads it — and the notebook, which depends on
+ * Accounts, all uninstalled: what a test about uninstalling the catalog
+ * starts from.
  */
 function catalogReadyToUninstall(): void
 {
-    disable(CatalogServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class);
-    uninstalled('purchases', 'sales');
+    disable(CatalogServiceProvider::class, AccountsServiceProvider::class, NotebookServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class, ReportsServiceProvider::class);
+    uninstalled('reports', 'notebook', 'accounts', 'purchases', 'sales');
 }
 
 test('an enabled module is refused, and nothing is touched', function () {
@@ -64,8 +68,10 @@ test('an enabled module is refused, and nothing is touched', function () {
 
 test('a module is refused while one that depends on it still has its tables', function () {
     // Accounts is disabled but its tables are still there, pointing at the
-    // customers table: Customers cannot go first.
-    disable(CustomersServiceProvider::class, AccountsServiceProvider::class, SalesServiceProvider::class);
+    // customers table: Customers cannot go first. Reports, which only reads
+    // them, and the notebook, are out of the way already.
+    disable(CustomersServiceProvider::class, AccountsServiceProvider::class, NotebookServiceProvider::class, SalesServiceProvider::class, ReportsServiceProvider::class);
+    uninstalled('reports', 'notebook');
 
     $this->artisan('app:module:uninstall', ['module' => 'customers', '--force' => true])
         ->expectsOutputToContain('[accounts]')
@@ -76,8 +82,10 @@ test('a module is refused while one that depends on it still has its tables', fu
 
 test('a module is refused while one that depends on it is installed, even with no tables of its own', function () {
     // Purchases has no tables, but its permissions are still stored: it is
-    // installed, and could be enabled again expecting the catalog.
-    disable(CatalogServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class);
+    // installed, and could be enabled again expecting the catalog. Reports,
+    // the notebook, and Accounts, which has tables, are out of the way first.
+    disable(CatalogServiceProvider::class, AccountsServiceProvider::class, NotebookServiceProvider::class, PurchasesServiceProvider::class, SalesServiceProvider::class, ReportsServiceProvider::class);
+    uninstalled('reports', 'notebook', 'accounts');
 
     $this->artisan('app:module:uninstall', ['module' => 'catalog', '--force' => true])
         ->expectsOutputToContain('Uninstall [purchases] first')
@@ -124,9 +132,9 @@ test('uninstalling removes its tables, migrations, and permissions, and nothing 
         ->and(Permission::query()->where('name', 'like', 'catalog.%')->exists())->toBeFalse()
         ->and(Role::findByName('manager', 'admin')->permissions()->where('name', 'like', 'catalog.%')->exists())->toBeFalse();
 
-    // Everything that is not the catalog's is untouched.
+    // Everything that is not the catalog's, or a module uninstalled first to
+    // make way for it, is untouched.
     expect(Schema::hasTable('customers'))->toBeTrue()
-        ->and(Schema::hasTable('customer_accounts'))->toBeTrue()
         ->and(Permission::query()->where('name', 'customers.view')->exists())->toBeTrue();
 });
 
@@ -172,14 +180,14 @@ test('a module whose own cleanup leaves something is stopped before its tables g
 test('uninstalling customers removes the portal logins it gave out, and no other login', function () {
     // The real case for `UninstallableInterface`: the logins are rows of
     // `users`, which no migration of the module drops.
-    disable(CustomersServiceProvider::class, AccountsServiceProvider::class, SalesServiceProvider::class);
+    disable(CustomersServiceProvider::class, AccountsServiceProvider::class, NotebookServiceProvider::class, SalesServiceProvider::class, ReportsServiceProvider::class);
 
     $customer = Customer::factory()->create();
     app(GrantPortalAccess::class)->handle($customer->id, 'umm.ahmed@example.test', 'a-long-password');
     $admin = AdminUser::factory()->create();
     $loginNoCustomerHolds = FrontendUser::factory()->create();
 
-    uninstalled('accounts', 'sales');
+    uninstalled('reports', 'notebook', 'accounts', 'sales');
 
     $this->artisan('app:module:uninstall', ['module' => 'customers', '--force' => true])
         ->expectsOutputToContain('1 portal login given to customers')

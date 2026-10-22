@@ -111,6 +111,38 @@ The rules are in priority order. [AGENTS.md](../../../AGENTS.md) and
   of at least 44px and body text of at least 16px.
 - Colours are tokens, never hex in a view, and stay business-neutral, so a new
   product changes tokens rather than components.
+- **Calm by default, colour where it means something.** Text is the body
+  colour or `text-body-secondary`; one accent, primary, marks the action a
+  screen is for, and fills whatever is chosen. Red and green are kept for
+  money's two directions — what raises a balance (`.flow-debit`) and what
+  lowers it (`.flow-credit`) — on its buttons, figures, and rows, always beside
+  the word; amber for what needs attention. A label carries its own colour as a
+  dot, a category as a soft tile.
+- Figures worth seeing first are tiles (`<x-admin::ui.stat>`, AdminLTE's
+  info-box), each a press away from what it counts. Rows and cards answer the
+  pointer: a tint, a lift.
+- A field looks like a field: its edge is `--field-border`, and a box to tick
+  `--tick-border`, never Bootstrap's 1.3:1 hairline. What shapes a list sits
+  in one `.filter-bar` above it, and a filter in force is filled with the
+  accent (`.is-filtering`) beside a way to clear it.
+- Where a form repeats a row — a charge's lines — every row has one shape:
+  its figure in the same place, its money field at the row's end, so the
+  eye reads down columns.
+- On a phone nothing is cut and nothing is twice: a list's rows are cards
+  (`.table-cards`), a button beside a search is its icon, a breadcrumb that
+  only repeats the title is left out, tiles sit two a row without their
+  caption, and filters fold behind one button that says how many are on.
+- A name set inside a sentence in the other script is isolated
+  (U+2068 … U+2069), or the words after it move into it: «Written by أسامة,
+  12:58 PM».
+- Anything destructive asks in the shell's dialog (`data-confirm`), naming
+  what will happen; a list longer than a screen is a
+  `<x-admin::form.search-select>`; a field for a figure takes only figures.
+- Text a person typed (`dir="auto"`) lines up with the page, not with its own
+  direction: an Arabic name in an English column starts where the column does.
+- Figures are `.num` — the page's face with digits of equal width — never
+  Bootstrap's `.font-monospace`, whose typewriter face clashes beside Cairo.
+  `ViewHygieneTest` refuses it.
 - One icon family per area. Never an emoji as an icon.
 
 ## 7. Adopting a ready-made template or component

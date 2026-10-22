@@ -43,7 +43,7 @@
                         id="{{ $section->paneId() }}"
                         role="tabpanel"
                     >
-                        @livewire($section->component)
+                        @livewire($section->component, $section->paneParameters(), key('settings-pane-'.$section->key))
                     </div>
                 @endforeach
             </div>

@@ -6,6 +6,8 @@ use App\Foundation\Contracts\Modules\SyncStepInterface;
 use App\Foundation\Modules\ModuleInspector;
 use App\Foundation\Modules\ModuleServiceProvider;
 use Illuminate\Console\Command;
+use Illuminate\Console\View\TaskResult;
+use Throwable;
 
 use function Laravel\Prompts\confirm;
 
@@ -60,10 +62,29 @@ final class SyncCommand extends Command
         }
 
         // In order, each step looking again just before it fixes: running the
-        // migrations can create the tables the next step stores into.
+        // migrations can create the tables the next step stores into. A step
+        // that cannot fix says why, and the others still run.
         foreach ($this->steps() as $step) {
-            if ($step->findings($module) !== []) {
-                $this->components->task($step->title(), fn () => $step->fix($module));
+            if ($step->findings($module) === []) {
+                continue;
+            }
+
+            $refusal = null;
+
+            $this->components->task($step->title(), static function () use ($step, $module, &$refusal): int {
+                try {
+                    $step->fix($module);
+                } catch (Throwable $exception) {
+                    $refusal = $exception->getMessage();
+
+                    return TaskResult::Failure->value;
+                }
+
+                return TaskResult::Success->value;
+            });
+
+            if ($refusal !== null) {
+                $this->components->bulletList([$refusal]);
             }
         }
 

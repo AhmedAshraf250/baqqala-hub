@@ -19,7 +19,7 @@
                     {{ $slot }}
 
                     @if ($breadcrumbs)
-                        <x-admin::layout.breadcrumbs />
+                        <x-admin::layout.breadcrumbs :current="$heading" />
                     @endif
                 </div>
             </div>

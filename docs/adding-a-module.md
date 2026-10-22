@@ -28,7 +28,8 @@ app/Modules/Deliveries/
 │   ├── Migrations/                   its tables
 │   ├── Models/                       their Eloquent models
 │   ├── Repositories/                 the repositories behind Contracts/
-│   └── Factories/                    its fixtures
+│   ├── Factories/                    its fixtures
+│   └── Seeders/                      data a shop starts from, installed by its own command
 ├── Areas/                            ← its faces
 │   ├── Admin/
 │   │   ├── routes.php                its admin screens (declared)
@@ -127,13 +128,16 @@ Implement only the interfaces the module needs:
 | --- | --- |
 | `ProvidesAdminNavigationInterface` | a section in the admin sidebar |
 | `ProvidesPermissionsInterface` | its permission enum |
-| `ProvidesAdminSettingsInterface` | a tab on the settings screen |
+| `ProvidesAdminSettingsInterface` | a tab on the settings screen — `SettingsSection::declared()` draws one from `SettingDefinition`s, with no screen of the module's own |
+| `ProvidesAdminSearchInterface` | its `SearchSourceInterface` classes, for the header's quick search |
+| `ProvidesTrashInterface` | its `TrashSourceInterface` classes: what it deletes, listed, restored, and purged from the trash |
+| `ProvidesAdminOverlaysInterface` | a component kept on every screen — a drawer, a quick note — closed until opened, so it must read nothing while it renders |
 | `DependsOnModulesInterface` | the modules it cannot work without |
 
 `name()` defaults to `{key}::module.name`. A sidebar section may use the
 module's name as its heading, or share one of the shell's —
-`shell.navigation.group.operations` — and the sidebar merges modules that
-share a heading.
+`shell.navigation.group.operations`, or `shell.navigation.group.counter`
+beside the customers — and the sidebar merges modules that share a heading.
 
 ## 3. The permissions
 
@@ -239,6 +243,11 @@ role should get something its patterns do not.
   through `save()`: two requests can pass the same check.
 - **Events wait for the commit.** Every event in `Contracts/Events/` implements
   `ShouldDispatchAfterCommit`.
+- **Write down what people change.** A step that changes a name, a price, a
+  setting — anything that is not money — records it with
+  `App\Foundation\Audit\AuditTrail::record()`, inside its transaction, under
+  `{key}.{thing}`, with translation keys for the kind and each field's name.
+  Uninstalling the module removes its rows for you.
 - **The provider is a declaration.** No queries in `register()` or `boot()` —
   `RenderCostTest` fails otherwise — and no file reads, which no test catches.
 - **Nothing of yours goes in a shared file.** Not `lang/`, not `config/admin.php`,

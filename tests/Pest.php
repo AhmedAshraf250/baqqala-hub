@@ -152,18 +152,27 @@ function adminScreens(): array
     return [
         'admin.dashboard',
         'admin.settings',
+        'admin.audit',
+        'admin.trash',
         'admin.profile',
         'admin.access.administrators.index',
         'admin.access.roles.index',
         'admin.catalog.products.index',
         'admin.catalog.categories.index',
         'admin.catalog.stock.index',
-        'admin.customers.index',
         'admin.accounts.index',
+        'admin.accounts.journal',
+        'admin.notebook.index',
         'admin.suppliers.index',
         'admin.purchases.index',
         'admin.sales.index',
         'admin.reports.index',
+        'admin.reports.debts',
+        'admin.reports.aging',
+        'admin.reports.activity',
+        'admin.reports.staff',
+        'admin.reports.corrections',
+        'admin.reports.products',
     ];
 }
 
@@ -243,6 +252,30 @@ function stopOrphanedPlaywrightServers(): void
     // shutdown has let go of the server.
     $stop();
     register_shutdown_function($stop);
+}
+
+/**
+ * How far an open page scrolls sideways once narrowed to a 375px phone.
+ *
+ * Narrowing a page starts AdminLTE's sidebar sliding away, and measured
+ * mid-slide the content is still laid out for the wider window — so this
+ * waits for the running transitions to end, and no more than two seconds:
+ * a looping animation never ends, and is not what moves the layout.
+ */
+function phoneOverflow(mixed $page): int
+{
+    $page->resize(375, 812);
+
+    return (int) $page->script(<<<'JS'
+        () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(async () => {
+            const transitions = document.getAnimations()
+                .filter((animation) => animation instanceof CSSTransition)
+                .map((animation) => animation.finished.catch(() => null));
+
+            await Promise.race([Promise.all(transitions), new Promise((done) => setTimeout(done, 2000))]);
+            resolve(document.documentElement.scrollWidth - document.documentElement.clientWidth);
+        })))
+    JS);
 }
 
 /**
